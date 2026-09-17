@@ -1,0 +1,22 @@
+.search-box {
+            margin: 5px 18px 20px;
+            background: #f4f6fa;
+            border: 1px solid #e3e7ef;
+            border-radius: 15px;
+            padding: 13px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box span {
+            font-size: 21px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            font-size: 14px;
+        }

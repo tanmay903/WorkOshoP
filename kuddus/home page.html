@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HirePro - Find Skilled Workers</title>
+
+    <link rel="stylesheet" href="home page.css">
+
+
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- Header -->
+        <header>
+
+            <div class="logo-area">
+                <div class="logo">k</div>
+
+                <div class="logo-text">
+                    <h2>WorkOshoP</h2>
+                    <p>Find Skilled Workers Near You</p>
+                </div>
+            </div>
+
+            <img class="profile" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile">
+
+        </header>
+
+
+
+        <div class="search-box"><a href="search.html">
+                <span>🔎</span>
+                <input type="text" placeholder="Search for workers (e.g. plumber, driver...)">
+                </a>
+        </div>
+
+
+
+        <section class="hero">
+
+            <h1>Skilled Workers For Your Every Need</h1>
+
+            <p>
+                Home Services • Construction • Cleaning
+                • Driving • And More...
+            </p>
+
+            <button onclick="hireNow()">
+                Hire Now →
+            </button>
+
+            <div class="worker-icon">
+                👷
+            </div>
+
+        </section>
+
+
+
+        <section class="section">
+
+            <div class="section-title">
+                <h2>Popular Categories</h2>
+                <a href="#">See All</a>
+            </div>
+
+
+            <div class="categories">
+
+                <div class="category">
+                    <div class="category-icon">⚡</div>
+                    <p>Electrician</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">🔧</div>
+                    <p>Plumber</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">🔨</div>
+                    <p>Carpenter</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">🎨</div>
+                    <p>Painter</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">🧹</div>
+                    <p>Cleaner</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">🚗</div>
+                    <p>Driver</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">👤</div>
+                    <p>Helper</p>
+                </div>
+
+                <div class="category">
+                    <div class="category-icon">▦</div>
+                    <p>More</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Featured Workers -->
+        <section class="section">
+
+            <div class="section-title">
+                <h2>Featured Workers</h2>
+                <a href="#">See All</a>
+            </div>
+
+
+            <div class="workers">
+
+
+
+                <div class="worker-card">
+
+                    <img class="worker-image" src="https://randomuser.me/api/portraits/men/45.jpg" alt="Electrician">
+
+                    <div class="worker-info">
+
+                        <div class="worker-name">
+                            Rohit Kumar ✓
+                        </div>
+
+                        <div class="job">
+                            Electrician
+                        </div>
+
+                        <div class="rating">
+                            <span class="star">★</span>
+                            4.8 (124)
+                        </div>
+
+                        <div class="price">
+                            ₹400 <span>/ day</span>
+                        </div>
+
+                        <button class="hire-btn" onclick="hireWorker('Rohit Kumar')">
+                            Hire Now
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="worker-card">
+
+                    <img class="worker-image" src="https://randomuser.me/api/portraits/men/51.jpg" alt="Plumber">
+
+                    <div class="worker-info">
+
+                        <div class="worker-name">
+                            Suresh Patel ✓
+                        </div>
+
+                        <div class="job">
+                            Plumber
+                        </div>
+
+                        <div class="rating">
+                            <span class="star">★</span>
+                            4.7 (98)
+                        </div>
+
+                        <div class="price">
+                            ₹350 <span>/ day</span>
+                        </div>
+
+                        <button class="hire-btn" ><a href="#" id="hire">Hire Now</a>
+                        </button>
+                        
+                
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="worker-card">
+
+                    <img class="worker-image" src="https://randomuser.me/api/portraits/men/36.jpg" alt="Carpenter">
+
+                    <div class="worker-info">
+
+                        <div class="worker-name">
+                            Aman Singh ✓
+                        </div>
+
+                        <div class="job">
+                            Carpenter
+                        </div>
+
+                        <div class="rating">
+                            <span class="star">★</span>
+                            4.9 (156)
+                        </div>
+
+                        <div class="price">
+                            ₹500 <span>/ day</span>
+                        </div>
+
+                        <button class="hire-btn" onclick="hireWorker('Aman Singh')">
+                            Hire Now
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="worker-card">
+
+                    <img class="worker-image" src="https://randomuser.me/api/portraits/women/44.jpg" alt="Cleaner">
+
+                    <div class="worker-info">
+
+                        <div class="worker-name">
+                            Priya Sharma ✓
+                        </div>
+
+                        <div class="job">
+                            Cleaner
+                        </div>
+
+                        <div class="rating">
+                            <span class="star">★</span>
+                            4.6 (87)
+                        </div>
+
+                        <div class="price">
+                            ₹300 <span>/ day</span>
+                        </div>
+
+                        <button class="hire-btn" onclick="hireWorker('Priya Sharma')">
+                            Hire Now
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div class="features">
+
+            <div class="feature">
+                <div class="feature-icon">🛡️</div>
+                Verified Workers
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">📅</div>
+                Flexible Hiring
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">💬</div>
+                24/7 Support
+            </div>
+
+        </div>
+
+
+
+        <nav class="bottom-nav">
+
+            <div class="nav-item active">
+                <div>⌂</div>
+                Home
+            </div>
+
+            <div class="nav-item">
+                <div>⌕</div>
+                Search
+            </div>
+
+            <div class="nav-item">
+                <div>💬</div>
+                Messages
+            </div>
+
+            <div class="nav-item"><a href="bookings.html">
+                    <div>♡</div>
+                    Bookings
+            </div>
+
+            <div class="nav-item">
+                <div>♙</div>
+                Profile
+            </div>
+
+        </nav>
+
+    </div>
+
+
+    <script>
+
+        function hireNow() {
+            alert("Let's find the perfect worker for you!");
+        }
+
+        function hireWorker(workerName) {
+            alert("You selected " + workerName + ".\nBooking page will open here.");
+        }
+
+    </script>
+
+</body>
+
+</html>
