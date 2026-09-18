@@ -1,5 +1,5 @@
          header {
-            display;
+           
             justify-content: space-between;
             align-items: center;
             padding: 22px 18px 15px;
@@ -42,7 +42,7 @@
             background: linear-gradient(135deg, #dbeafe, #f8fafc);
             
 
-            display:;
+            
             justify-content: center;
             align-items: center;
 
@@ -55,11 +55,11 @@
             display: flex;
             flex-direction: row;
             margin: 2rem;
-            width: 100%;
+            width: 97%;
             border: none;
             border-radius: 20px;
             overflow: hidden;
-            max-width: 97 %;
+            max-width: 97%;
 
             background: white;
 
