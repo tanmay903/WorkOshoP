@@ -1,4 +1,4 @@
-         header {
+         /* header {
            
             justify-content: space-between;
             align-items: center;
@@ -13,143 +13,227 @@
         }
 
         .logo {
-            width: 4px;
-            height: 4px;
-            background: #1554e8;
-            color: white;
-            border-radius: 13px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 22px;
-            font-weight: bold;
-        }
+          height: 50px;       /* Adjust height to fit your design */
+         /* width: auto;        /* Keeps the image aspect ratio perfect */
+         /* display: block;
+          */
+         */
+         /* }
 
         .logo-text h2 {
 
             font-size: 21px;
-            font-color: #3a71e8;
+            color: #3a71e8;
             font-weight: bold;
             font-family: Arial, sans-serif;
-        }
+        } */
 
-       
+         */
 
-        
+         /* Navigation Container Spacing */
+         .navbar .container-fluid {
+             border-bottom: 1px solid #e0e0e0;
+             /* Optional: adds a subtle border at the bottom */
+             boarder-radius: 10px;
+             /* Optional: adds rounded corners to the navbar */
+             width: 100%;
+             padding-left: 20px;
+             padding-right: 20px;
+         }
 
-        /* Page */
-        body {
-            background: linear-gradient(135deg, #dbeafe, #f8fafc);
-            
+         /* Logo Image Styling */
+         .logo-image {
+             height: 70px;
+             /* Adjust height to fit your design */
+             width: auto;
+             /* Keeps the image aspect ratio perfect */
+             display: block;
+             border-radius: 50px;
+             /* Optional: adds rounded corners to the logo */
+         }
 
-            
-            justify-content: center;
-            align-items: center;
+         /* Brand Text Styling */
+         .logo-text h2 {
 
-            font-family: Arial, sans-serif;
-        }
+             margin: 0;
+             /* Removes default browser margins that break alignment */
+             font-size: 1.5rem;
+             /* Scales the text nicely */
+             font-weight: 600;
+             /* Makes it bold */
+             color: hwb(262 5% 64% / 0.993);
+             /* Dark grey text color */
+         }
 
-        /* Card */
-        .card {
-            padding: 20px;
-            display: flex;
-            flex-direction: row;
-            margin: 2rem;
-            width: 97%;
-            border: none;
-            border-radius: 20px;
-            overflow: hidden;
-            max-width: 97%;
 
-            background: white;
 
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 
-            transition: all 0.4s ease;
-        }
+         /* Page */
+         body {
+             background: linear-gradient(135deg, #dbeafe, #f8fafc);
 
-        /* Card Hover */
-        .card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-        }
 
-        /* Card Image */
-        .card-img-top {
-            height: auto;
-            width: 30%;
-            margin: 5rem;
-            object-fit: cover;
 
-            transition: transform 0.5s ease;
-        }
+             justify-content: center;
+             align-items: center;
 
-        /* Image Hover */
-        .card:hover .card-img-top {
-            transform: scale(1.08);
-        }
+             font-family: Arial, sans-serif;
+         }
 
-        /* Card Body */
-        .card-body {
-            padding: 20px;
-        }
+         /* Card */
+         .card {
+             padding: 20px;
+             display: flex;
+             flex-direction: row;
+             margin: 2rem;
+             width: 97%;
+             border: none;
+             border-radius: 20px;
+             overflow: hidden;
+             max-width: 97%;
 
-        /* Title */
-        .card-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #212529;
+             background: white;
 
-            transition: color 0.3s ease;
-        }
+             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 
-        /* Title Hover */
-        .card:hover .card-title {
-            color: #0d6efd;
-        }
+             transition: all 0.4s ease;
+         }
 
-        /* Text */
-        .card-text {
-            color: #6c757d;
-            line-height: 1.6;
-        }
+         /* Card Hover */
+         .card:hover {
+             transform: translateY(-12px);
+             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+         }
 
-        /* List */
-        .list-group-item {
-            padding: 12px 20px;
-            border-left: none;
-            border-right: none;
+         /* Card Image */
+         .card-img-top {
+             height: auto;
+             width: 30%;
+             margin: 5rem;
+             object-fit: cover;
 
-            transition: all 0.3s ease;
-        }
+             transition: transform 0.5s ease;
+         }
 
-        /* List Hover */
-        .list-group-item:hover {
-            background-color: #e7f1ff;
-            color: #0d6efd;
-            padding-left: 28px;
-            cursor: pointer;
-        }
+         /* Image Hover */
+         .card:hover .card-img-top {
+             transform: scale(1.08);
+         }
 
-        /* Links */
-        .card-link {
-            text-decoration: none;
-            font-weight: 600;
+         /* Card Body */
+         .card-body {
+             padding: 20px;
+         }
 
-            transition: all 0.3s ease;
-        }
+         /* Title */
+         .card-title {
+             font-size: 22px;
+             font-weight: bold;
+             color: #212529;
 
-        /* Link Hover */
-        .card-link:hover {
-            color: #084298;
-            letter-spacing: 1px;
-        }
+             transition: color 0.3s ease;
+         }
 
-        .dropall {
+         /* Title Hover */
+         .card:hover .card-title {
+             color: #0d6efd;
+         }
+
+         /* Text */
+         .card-text {
+             color: #6c757d;
+             line-height: 1.6;
+         }
+
+         /* List */
+         .list-group-item {
+             padding: 12px 20px;
+             border-left: none;
+             border-right: none;
+
+             transition: all 0.3s ease;
+         }
+
+         /* List Hover */
+         .list-group-item:hover {
+             background-color: #e7f1ff;
+             color: #0d6efd;
+             padding-left: 28px;
+             cursor: pointer;
+         }
+
+         /* Links */
+         .card-link {
+             text-decoration: none;
+             font-weight: 600;
+
+             transition: all 0.3s ease;
+         }
+
+         /* Link Hover */
+         .card-link:hover {
+             color: #084298;
+             letter-spacing: 1px;
+         }
+
+         /* .dropall {
             gap: 60px;
             display: flex;
             justify-content: center;
             align-items: center;  
         }
-        
+         */
 
+         .aboutreview
+        {
+            
+        }
+
+         .navbar {
+            
+             display: flex;
+             justify-content: space-around;
+             align-items: center;
+             background-color: #333;
+             padding: 10px 20px;
+         }
+
+         .logo {
+             color: white;
+             font-size: 24px;
+             font-weight: bold;
+         }
+
+         .nav-links {
+             list-style: none;
+             display: flex;
+             margin: 0;
+             padding: 0;
+         }
+
+
+         .nav-item {
+             color: #fff;
+             text-decoration: none;
+             padding: 10px 20px;
+             border-radius: 4px;
+             transition: background-color 0.3s ease, color 0.3s ease;
+         }
+
+
+         .nav-item:hover {
+             background-color: #555;
+         }
+
+
+         .nav-item.active {
+             background-color: #ff9800;
+             color: #000;
+             font-weight: bold;
+         }
+
+
+         .content {
+             padding: 40px;
+             text-align: center;
+         }
