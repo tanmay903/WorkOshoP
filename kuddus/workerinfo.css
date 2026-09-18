@@ -1,0 +1,155 @@
+         header {
+            display;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 18px 15px;
+            
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            width: 4px;
+            height: 4px;
+            background: #1554e8;
+            color: white;
+            border-radius: 13px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .logo-text h2 {
+
+            font-size: 21px;
+            font-color: #3a71e8;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+
+       
+
+        
+
+        /* Page */
+        body {
+            background: linear-gradient(135deg, #dbeafe, #f8fafc);
+            
+
+            display:;
+            justify-content: center;
+            align-items: center;
+
+            font-family: Arial, sans-serif;
+        }
+
+        /* Card */
+        .card {
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            margin: 2rem;
+            width: 100%;
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            max-width: 97 %;
+
+            background: white;
+
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+            transition: all 0.4s ease;
+        }
+
+        /* Card Hover */
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Card Image */
+        .card-img-top {
+            height: auto;
+            width: 30%;
+            margin: 5rem;
+            object-fit: cover;
+
+            transition: transform 0.5s ease;
+        }
+
+        /* Image Hover */
+        .card:hover .card-img-top {
+            transform: scale(1.08);
+        }
+
+        /* Card Body */
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Title */
+        .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #212529;
+
+            transition: color 0.3s ease;
+        }
+
+        /* Title Hover */
+        .card:hover .card-title {
+            color: #0d6efd;
+        }
+
+        /* Text */
+        .card-text {
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        /* List */
+        .list-group-item {
+            padding: 12px 20px;
+            border-left: none;
+            border-right: none;
+
+            transition: all 0.3s ease;
+        }
+
+        /* List Hover */
+        .list-group-item:hover {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            padding-left: 28px;
+            cursor: pointer;
+        }
+
+        /* Links */
+        .card-link {
+            text-decoration: none;
+            font-weight: 600;
+
+            transition: all 0.3s ease;
+        }
+
+        /* Link Hover */
+        .card-link:hover {
+            color: #084298;
+            letter-spacing: 1px;
+        }
+
+        .dropall {
+            gap: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;  
+        }
+        
+
