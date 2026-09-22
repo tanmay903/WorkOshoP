@@ -67,6 +67,7 @@ body {
 
 /* Header Area Configuration */
 header {
+    background-color: #0f1930;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -96,7 +97,7 @@ header {
 /* Logo Typographic styling */
 .logo-text h2 {
     font-size: 20px;
-    color: #10224a;
+    color: #cdd5e5;
     font-weight: bold;
     line-height: 1.2;
 }
@@ -116,10 +117,13 @@ header {
     border: 2px solid #e7ebf3;
 }
 
+
+
 /* Search */
 .search-box {
+    
     display: flex;
-    margin: 5px 18px 20px;
+    margin: 5px 5px 18px 20px;
     background: #f4f6fa;
     border: 1px solid #e3e7ef;
     border-radius: 15px;
