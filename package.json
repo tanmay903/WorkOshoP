@@ -1,0 +1,13 @@
+{
+  "name": "hireworker-workspace",
+  "version": "1.0.0",
+  "description": "Full-stack skilled-worker hiring marketplace separated into backend and frontend",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend run start"
+  }
+}
+
