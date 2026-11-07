@@ -1,0 +1,126 @@
+### Variables
+@baseUrl = http://localhost:5000/api
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### 2. Get Categories
+GET {{baseUrl}}/categories
+
+### 3. Customer Registration
+POST {{baseUrl}}/auth/register-customer
+Content-Type: application/json
+
+{
+  "name": "Karan Mehra",
+  "email": "karan.mehra@example.com",
+  "phone": "+91 98111 22334",
+  "password": "password123",
+  "city": "New Delhi"
+}
+
+### 4. Worker Registration
+POST {{baseUrl}}/auth/register-worker
+Content-Type: application/json
+
+{
+  "name": "Dev Sharma",
+  "email": "dev.sharma@example.com",
+  "phone": "+91 98222 33445",
+  "password": "password123",
+  "profession": "Electrician",
+  "category": "electrician",
+  "hourlyRate": 350,
+  "experience": "4+ Years",
+  "city": "New Delhi",
+  "location": "New Delhi, India",
+  "skills": ["Inverter Setup", "Short Circuit Repair", "MCB Wiring"]
+}
+
+### 5. Customer Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "aarav.singhal@example.com",
+  "password": "password123",
+  "role": "customer"
+}
+
+### 6. Get Current User Profile (Protected)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 7. Search & Filter Workers (Public)
+GET {{baseUrl}}/workers?q=Electrician&loc=Delhi&minRating=4.5&maxPrice=500&sortBy=rating-desc
+
+### 8. Get Single Worker Profile
+GET {{baseUrl}}/workers/w-1
+
+### 9. Get Jobs
+GET {{baseUrl}}/jobs?category=electrician&status=Open
+
+### 10. Post a New Job (Customer)
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Living Room Ceiling Fan & Smart Switchboard Setup",
+  "category": "electrician",
+  "description": "Need skilled electrician to replace standard switches with smart WiFi switches and hang 2 BLDC ceiling fans.",
+  "location": "Sector 15, Noida (Delhi NCR)",
+  "budget": 1200,
+  "paymentType": "Fixed Price",
+  "requiredExperience": "3+ Years",
+  "preferredDate": "2026-11-20"
+}
+
+### 11. Create a Service Booking (Hire Worker)
+POST {{baseUrl}}/bookings
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "workerId": "65e000000000000000000001",
+  "serviceTitle": "Complete House Wiring Inspection",
+  "serviceDate": "2026-11-18",
+  "serviceTime": "11:00 AM",
+  "location": "Flat 302, Green Valley Apartments, Delhi NCR",
+  "instructions": "Please bring multi-meter tester.",
+  "amount": 600
+}
+
+### 12. Get My Bookings (Protected)
+GET {{baseUrl}}/bookings
+Authorization: Bearer {{authToken}}
+
+### 13. Update Booking Status (Accept / In Progress / Completed)
+PUT {{baseUrl}}/bookings/65e000000000000000000002/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "Accepted"
+}
+
+### 14. Submit Review for Completed Booking
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "bookingId": "65e000000000000000000002",
+  "rating": 5,
+  "comment": "Outstanding electrician! Resolved the tripping issue quickly and cleanly."
+}
+
+### 15. Get Notifications (Protected)
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{authToken}}
+
+### 16. Admin Statistics (Admin only)
+GET {{baseUrl}}/admin/stats
+Authorization: Bearer {{authToken}}
+

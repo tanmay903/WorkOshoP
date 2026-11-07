@@ -1,45 +1,38 @@
-# HireWorker — Full-Stack Skilled Worker Marketplace
+# HireWorker — Skilled Worker Marketplace
 
 **"Find Skilled People. Get Work Done."**
 
-The project has been separated into clean, modular **Frontend** and **Backend** directories.
+HireWorker is a full-stack skilled-worker hiring marketplace connecting customers with verified tradespeople and service professionals (Electricians, Plumbers, Carpenters, Painters, Cleaners, Drivers, Mechanics, Construction workers, and more).
 
 ---
 
-## Project Structure
+## Architecture Overview
+
+The project is structured into two dedicated directories:
 
 ```
 WorkOshoP/
-├── frontend/                     # Client application (React + Vite + Tailwind CSS)
+├── frontend/                     # Client Application (React 18, Vite, Tailwind CSS, Lucide React)
 │   ├── src/
-│   │   ├── components/           # Reusable UI components (Navbar, WorkerCard, CategoryCard, etc.)
-│   │   ├── pages/                # Main pages (Home, FindWorkers, WorkerProfile, PostJob, MyJobs, etc.)
-│   │   ├── dashboards/           # Role dashboards (CustomerDashboard, WorkerDashboard, AdminDashboard)
-│   │   ├── context/              # Authentication & persona state (AuthContext.jsx)
-│   │   ├── services/             # Backend API client integration (api.js)
-│   │   ├── data/                 # Rich fallback dataset & categories
-│   │   ├── utils/                # LocalStorage persistent fallback (storage.js)
-│   │   ├── App.jsx               # Routes setup
-│   │   ├── main.jsx              # App entry point
-│   │   └── index.css             # Tailwind base styles
+│   │   ├── components/           # Navbar, Footer, WorkerCard, CategoryCard, ReviewModal, etc.
+│   │   ├── pages/                # Login, Home, FindWorkers, WorkerProfile, PostJob, MyJobs, Bookings, Messages, etc.
+│   │   ├── dashboards/           # CustomerDashboard, WorkerDashboard, AdminDashboard
+│   │   ├── context/              # AuthContext (Role switching, JWT auth, demo accounts)
+│   │   ├── services/             # Axios API client (api.js) with fallback to localStorage
+│   │   ├── App.jsx               # Entry router (Login gateway at `/` & `/login`, main pages at `/home`, etc.)
+│   │   └── main.jsx              # React DOM entry
 │   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
+│   └── vite.config.js            # Reverse proxy `/api` -> `http://localhost:5000`
 │
-├── backend/                      # REST API Server (Node.js + Express)
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── workers.js        # Worker discovery, search, filters & reviews
-│   │   │   ├── jobs.js           # Customer job postings & bids
-│   │   │   ├── bookings.js       # Service scheduling & status progression
-│   │   │   ├── messages.js       # In-app messaging & chat history
-│   │   │   ├── notifications.js  # System & order alerts
-│   │   │   ├── auth.js           # Authentication & registrations
-│   │   │   └── categories.js     # Skilled service categories
-│   │   ├── data/
-│   │   │   ├── seedData.js       # Seed dataset
-│   │   │   └── db.js             # Data store engine
-│   │   └── server.js             # Express app entry point (port 5000)
+├── backend/                      # Production-ready REST API (Node.js, Express, MongoDB/Mongoose, Socket.io)
+│   ├── config/                   # db.js (MongoDB connection with graceful fallback)
+│   ├── models/                   # User, WorkerProfile, Job, Booking, Message, Review, Notification
+│   ├── controllers/              # Auth, User, Worker, Job, Booking, Message, Review, Notification, Admin
+│   ├── routes/                   # authRoutes, workerRoutes, jobRoutes, bookingRoutes, etc.
+│   ├── middleware/               # authMiddleware (JWT), roleMiddleware, errorMiddleware, uploadMiddleware
+│   ├── utils/                    # generateToken, sendNotification, seeder.js
+│   ├── tests/                    # requests.http (API verification tests)
+│   ├── server.js                 # Express server with Helmet, CORS, Rate Limit, Socket.io (Port 5000)
 │   └── package.json
 │
 ├── package.json                  # Root workspace helper scripts
@@ -48,53 +41,54 @@ WorkOshoP/
 
 ---
 
+## Key Features
+
+1. **Dedicated Login & Registration Gateway (`/` and `/login`)**:
+   - Arriving at the website immediately presents the modern split-screen authentication portal.
+   - Includes Sign In, Register, 1-Click Google OAuth simulation, Role switching (Customer vs. Worker), and instant 1-Click demo accounts.
+   - Guests can click **"Enter Website as Guest"** to immediately explore the marketplace without logging in.
+
+2. **Worker Profile & Smart Recommendations**:
+   - Detailed profiles with hourly rates, verified badge, skills, gallery photos, and customer reviews.
+   - **"Other Skilled Workers You May Like"**: Automatically suggests matching workers at the bottom of the profile.
+
+3. **Service Discovery & Filtering**:
+   - Live search by profession, location, category, experience, rating, price range, and verification status.
+
+4. **Job Posting & Booking System**:
+   - Customers can post service requests with budgets and deadlines.
+   - Workers receive instant job alerts and can submit proposals.
+   - Direct booking flow with date, time, address, and live status tracking (*Pending*, *Accepted*, *In Progress*, *Completed*).
+
+5. **Security & Performance**:
+   - JWT token authentication with bcrypt password hashing.
+   - Role-Based Access Control (Customer, Worker, Admin).
+   - Helmet security headers, CORS protection, rate-limiting, and sanitized inputs.
+
+---
+
 ## How to Run
 
-### Option A: Run From Root Workspace
+### Quick Start (From Root Workspace)
 
-1. **Start the Backend API Server:**
+1. **Start the Backend Server (Port 5000):**
    ```powershell
    npm run dev:backend
    ```
-   Runs Express on **`http://localhost:5000`** with live reload.
 
-2. **In a separate terminal, start the Frontend App:**
+2. **Start the Frontend Application (Port 3000):**
    ```powershell
    npm run dev:frontend
    ```
-   Runs Vite on **`http://localhost:3000`**.
+
+3. Open **`http://localhost:3000`** in your browser to view the login gateway.
 
 ---
 
-### Option B: Run From Individual Directories
+### Seeding Test Data (Optional)
 
-#### 1. Backend Server
+If you have a local MongoDB service running:
 ```powershell
-cd backend
-npm start
+npm run seed:backend
 ```
-
-#### 2. Frontend Application
-```powershell
-cd frontend
-npm run dev
-```
-
----
-
-## API Endpoints Overview
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/workers` | Discover workers with filters (`?q=`, `?loc=`, `?category=`, `?verified=`, `?minRating=`) |
-| `GET` | `/api/workers/:id` | Detailed worker profile |
-| `POST` | `/api/workers/:id/reviews` | Submit a customer rating and review |
-| `GET` | `/api/jobs` | Get job postings (`?status=`) |
-| `POST` | `/api/jobs` | Post a new job requirement |
-| `GET` | `/api/bookings` | List all scheduled bookings |
-| `POST` | `/api/bookings` | Book a service slot |
-| `PUT` | `/api/bookings/:id/status` | Update booking status (*Accepted*, *In Progress*, *Completed*) |
-| `GET` | `/api/messages` | Conversation threads |
-| `POST` | `/api/messages/:convId` | Send a chat message |
-| `GET` | `/api/categories` | Service categories |
+*Note: If MongoDB is not running locally, the frontend seamlessly uses its built-in interactive offline dataset.*

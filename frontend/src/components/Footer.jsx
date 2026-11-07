@@ -47,7 +47,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5">
+            <Link to="/home" className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center text-white">
                 <Zap className="w-5 h-5 fill-white" />
               </div>

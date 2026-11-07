@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -22,41 +22,57 @@ import { CustomerDashboard } from './dashboards/CustomerDashboard';
 import { WorkerDashboard } from './dashboards/WorkerDashboard';
 import { AdminDashboard } from './dashboards/AdminDashboard';
 
+// Main Application Layout (Wrapped with Navigation Bar and Footer)
+const MainLayout = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-surface text-slate-800 font-sans selection:bg-primary-500 selection:text-white">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
 export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-surface text-slate-800 font-sans selection:bg-primary-500 selection:text-white">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/find-workers" element={<FindWorkers />} />
-              <Route path="/worker/:id" element={<WorkerProfile />} />
-              <Route path="/post-job" element={<PostJob />} />
-              <Route path="/my-jobs" element={<MyJobs />} />
-              <Route path="/bookings" element={<Bookings />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/register-worker" element={<RegisterWorker />} />
+        <Routes>
+          {/* ========================================================
+              1. Entry Gateway (When user visits the site, opens Login)
+             ======================================================== */}
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-              {/* Dashboards */}
-              <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-              <Route path="/worker-dashboard" element={<WorkerDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+          {/* ========================================================
+              2. Main Marketplace Website (With Navbar & Footer)
+             ======================================================== */}
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/find-workers" element={<FindWorkers />} />
+            <Route path="/worker/:id" element={<WorkerProfile />} />
+            <Route path="/post-job" element={<PostJob />} />
+            <Route path="/my-jobs" element={<MyJobs />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/register-worker" element={<RegisterWorker />} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+            {/* Dashboards */}
+            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+            <Route path="/worker-dashboard" element={<WorkerDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
 }
 
 export default App;
-

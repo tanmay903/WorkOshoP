@@ -66,6 +66,30 @@ export const AuthProvider = ({ children }) => {
     return profile;
   };
 
+  const loginWithGoogle = (role = 'customer') => {
+    let googleUser;
+    if (role === 'worker') {
+      googleUser = {
+        ...demoProfiles.worker,
+        authProvider: 'google',
+      };
+    } else if (role === 'admin') {
+      googleUser = {
+        ...demoProfiles.admin,
+        authProvider: 'google',
+      };
+    } else {
+      googleUser = {
+        ...demoProfiles.customer,
+        authProvider: 'google',
+      };
+    }
+
+    storage.setAuthUser(googleUser);
+    setUser(googleUser);
+    return googleUser;
+  };
+
   const registerCustomer = (data) => {
     const newCustomer = {
       id: `cust-${Date.now()}`,
@@ -150,6 +174,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       user,
       login,
+      loginWithGoogle,
       logout,
       registerCustomer,
       registerWorker,

@@ -18,9 +18,12 @@ import {
   ExternalLink,
   ChevronRight,
   ArrowLeft,
-  Navigation
+  Navigation,
+  Sparkles,
+  Users
 } from 'lucide-react';
 import { RatingStars } from '../components/RatingStars';
+import { WorkerCard } from '../components/WorkerCard';
 import { BookingModal } from '../components/BookingModal';
 import { ReviewModal } from '../components/ReviewModal';
 import { storage } from '../utils/storage';
@@ -38,12 +41,31 @@ export const WorkerProfile = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [callRevealed, setCallRevealed] = useState(false);
+  const [suggestedWorkers, setSuggestedWorkers] = useState([]);
 
   useEffect(() => {
     // If no ID or ID not found, fallback to first worker (Rohit Kumar)
     const target = storage.getWorkerById(id) || storage.getWorkers()[0];
     setWorker(target);
     window.scrollTo(0, 0);
+
+    if (target) {
+      const all = storage.getWorkers();
+      // Find workers in same category or profession (excluding current)
+      let sameCategory = all.filter(
+        (w) => w.id !== target.id && (w.category === target.category || w.profession === target.profession)
+      );
+
+      // If less than 3, supplement with other top rated verified workers
+      if (sameCategory.length < 3) {
+        const others = all.filter(
+          (w) => w.id !== target.id && !sameCategory.some((sc) => sc.id === w.id)
+        );
+        sameCategory = [...sameCategory, ...others];
+      }
+
+      setSuggestedWorkers(sameCategory.slice(0, 3));
+    }
   }, [id]);
 
   if (!worker) {
@@ -632,6 +654,43 @@ export const WorkerProfile = () => {
           </aside>
         </div>
       </div>
+
+      {/* Suggested Workers Section at the bottom of worker info */}
+      {suggestedWorkers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-soft">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-100 gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded-full mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Recommended Alternatives
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  Other Skilled Workers You May Like
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Top-rated verified professionals in {worker.profession} & related trades
+                </p>
+              </div>
+
+              <Link
+                to={`/find-workers?category=${worker.category || 'all'}`}
+                className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors"
+              >
+                <span>Browse All {worker.profession}s</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Suggested Workers Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {suggestedWorkers.map((sWorker) => (
+                <WorkerCard key={sWorker.id} worker={sWorker} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Booking Modal */}
       <BookingModal
