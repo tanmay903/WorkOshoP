@@ -19,6 +19,13 @@ export const createBooking = async (req, res, next) => {
       estimatedAmount,
     } = req.body;
 
+    if (!location || !location.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Work location / address is required to hire a worker.',
+      });
+    }
+
     const worker = await User.findById(workerId);
     if (!worker) {
       return res.status(404).json({ success: false, message: 'Worker not found' });
@@ -31,7 +38,7 @@ export const createBooking = async (req, res, next) => {
       serviceTitle: serviceTitle || 'General Service',
       serviceDate,
       serviceTime: serviceTime || '10:00 AM',
-      location: location || req.user.city || 'New Delhi',
+      location: location.trim(),
       instructions,
       amount: Number(amount || estimatedAmount) || 500,
       status: 'Pending',

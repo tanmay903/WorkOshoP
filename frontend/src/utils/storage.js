@@ -129,6 +129,13 @@ export const storage = {
   },
 
   saveBooking: (booking) => {
+    if (!booking.customerId) {
+      throw new Error("You must be logged in to create a booking.");
+    }
+    const loc = booking.address || booking.location;
+    if (!loc || !loc.trim()) {
+      throw new Error("Work location is required to hire a worker.");
+    }
     const bookings = storage.getBookings();
     const newBooking = {
       ...booking,

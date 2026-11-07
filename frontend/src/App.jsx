@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 
@@ -25,7 +26,7 @@ import { AdminDashboard } from './dashboards/AdminDashboard';
 // Main Application Layout (Wrapped with Navigation Bar and Footer)
 const MainLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-surface text-slate-800 font-sans selection:bg-primary-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-surface dark:bg-[#00033D] text-slate-800 dark:text-slate-100 font-sans selection:bg-primary-600 selection:text-white transition-colors duration-200">
       <Navbar />
       <main className="flex-1">
         <Outlet />
@@ -37,9 +38,10 @@ const MainLayout = () => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
           {/* ========================================================
               1. Entry Gateway (When user visits the site, opens Login)
              ======================================================== */}
@@ -72,6 +74,7 @@ export function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+  </ThemeProvider>
   );
 }
 

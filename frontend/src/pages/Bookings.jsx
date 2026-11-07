@@ -58,6 +58,27 @@ export const Bookings = () => {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5 animate-fadeIn">
+        <div className="w-16 h-16 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+          <Calendar className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-extrabold text-slate-900">Sign In to View Bookings</h2>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Please log in to access your booked services, track worker arrival, and manage appointments.
+        </p>
+        <Link
+          to="/login"
+          state={{ from: '/bookings', message: 'Please log in to view your bookings.' }}
+          className="inline-flex py-3 px-6 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold rounded-xl text-sm shadow-md transition-all"
+        >
+          Sign In / Register
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}

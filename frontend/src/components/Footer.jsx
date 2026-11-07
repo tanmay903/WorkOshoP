@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, ShieldCheck, Headphones, Heart, Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Footer = () => {
   return (
@@ -135,6 +136,7 @@ export const Footer = () => {
             <a href="#privacy" className="hover:text-slate-300">Privacy Policy</a>
             <a href="#terms" className="hover:text-slate-300">Terms of Service</a>
             <a href="#security" className="hover:text-slate-300">Safety & Trust</a>
+            <ThemeToggle showLabel className="text-slate-400 hover:text-white" />
           </div>
         </div>
       </div>

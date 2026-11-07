@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 import { categories } from '../data/categories';
 import { storage } from '../utils/storage';
@@ -26,7 +27,7 @@ export const PostJob = () => {
     title: '',
     category: 'electrician',
     description: '',
-    location: user?.city ? `Sector 21, ${user.city}` : 'Indirapuram, Ghaziabad (Delhi NCR)',
+    location: user?.location || user?.address || (user?.city ? `Sector 21, ${user.city}` : ''),
     budget: '',
     paymentType: 'Fixed Price',
     experienceRequired: '3+ Years',
@@ -35,21 +36,59 @@ export const PostJob = () => {
       d.setDate(d.getDate() + 3);
       return d.toISOString().split('T')[0];
     },
-    customerName: user?.name || 'Aarav Singhal',
-    customerPhone: user?.phone || '+91 98711 22334',
-    customerEmail: user?.email || 'aarav.singhal@example.com',
+    customerName: user?.name || '',
+    customerPhone: user?.phone || '',
+    customerEmail: user?.email || '',
   });
 
+  const [locationError, setLocationError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-slate-200/90 shadow-soft-lg text-center space-y-5 animate-fadeIn">
+          <div className="w-16 h-16 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900">Sign In to Post a Job</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Please log in or create a customer account to post job requests, compare verified tradesperson bids, and hire securely.
+          </p>
+          <button
+            onClick={() =>
+              navigate('/login', {
+                state: { from: '/post-job', message: 'Please log in or create an account to post a job.' },
+              })
+            }
+            className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+          >
+            <span>Sign In / Register</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    if (e.target.name === 'location' && locationError) {
+      setLocationError('');
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!formData.location || !formData.location.trim() || formData.location.trim().length < 5) {
+      setLocationError('Please provide your complete job location / address (at least 5 characters).');
+      return;
+    }
+
     setIsSubmitting(true);
+    setLocationError('');
 
     const categoryObj = categories.find(c => c.id === formData.category);
 
@@ -210,8 +249,18 @@ export const PostJob = () => {
                       placeholder="e.g. Sector 18, Noida or Bandra West, Mumbai"
                       value={formData.location}
                       onChange={handleChange}
-                      className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none"
+                      className={`w-full px-3.5 py-2.5 text-sm rounded-xl outline-none transition-all ${
+                        locationError
+                          ? 'border-2 border-rose-500 bg-rose-50/30 focus:ring-2 focus:ring-rose-400'
+                          : 'bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:bg-white'
+                      }`}
                     />
+                    {locationError && (
+                      <p className="text-xs text-rose-600 mt-1 flex items-center gap-1 font-semibold">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>{locationError}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div>

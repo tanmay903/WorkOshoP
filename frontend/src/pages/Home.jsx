@@ -50,24 +50,24 @@ export const Home = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-primary-200 shadow-xs mb-6 animate-fadeIn">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-primary-200 dark:border-primary-900 shadow-xs mb-6 animate-fadeIn">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="text-xs font-semibold text-slate-800">
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
               India's Most Trusted Skilled Worker Marketplace
             </span>
-            <span className="text-slate-300">|</span>
-            <span className="text-xs font-bold text-primary-600">10,000+ Pros</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className="text-xs font-bold text-primary-600 dark:text-primary-400">10,000+ Pros</span>
           </div>
 
           {/* Headings */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-navy-900 tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-navy-900 dark:text-white tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
             Find Skilled Workers <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-primary-600 via-primary-500 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#977DFF] via-[#0033FF] to-[#0600AB] bg-clip-text text-transparent">
               For Every Need
             </span>
           </h1>
 
-          <p className="mt-5 text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-5 text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Connect with trusted professionals and get your work done quickly, safely and affordably.
           </p>
 
@@ -75,7 +75,7 @@ export const Home = () => {
           <div className="mt-8 sm:mt-10 max-w-3xl mx-auto">
             <form
               onSubmit={handleSearch}
-              className="bg-white p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-200/90 flex flex-col sm:flex-row items-center gap-2 sm:gap-3"
+              className="bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/70 dark:shadow-none border border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row items-center gap-2 sm:gap-3"
             >
               {/* Profession search input */}
               <div className="relative flex-1 w-full">
@@ -85,12 +85,12 @@ export const Home = () => {
                   placeholder="e.g. Electrician, Plumber, Painter..."
                   value={professionQuery}
                   onChange={(e) => setProfessionQuery(e.target.value)}
-                  className="w-full pl-11 pr-3 py-3 text-sm text-slate-800 placeholder-slate-400 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 transition-colors"
+                  className="w-full pl-11 pr-3 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 dark:focus:bg-slate-800/80 transition-colors"
                 />
               </div>
 
               {/* Divider */}
-              <div className="hidden sm:block w-px h-8 bg-slate-200" />
+              <div className="hidden sm:block w-px h-8 bg-slate-200 dark:bg-slate-700" />
 
               {/* Location search input */}
               <div className="relative flex-1 w-full">
@@ -100,7 +100,7 @@ export const Home = () => {
                   placeholder="Location (e.g. Delhi, Mumbai...)"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
-                  className="w-full pl-11 pr-3 py-3 text-sm text-slate-800 placeholder-slate-400 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 transition-colors"
+                  className="w-full pl-11 pr-3 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 dark:focus:bg-slate-800/80 transition-colors"
                 />
               </div>
 
@@ -116,7 +116,7 @@ export const Home = () => {
 
                 <Link
                   to="/find-workers"
-                  className="hidden md:inline-flex px-5 py-3 bg-navy-900 hover:bg-navy-800 active:scale-95 text-white font-semibold text-sm rounded-xl sm:rounded-2xl transition-all"
+                  className="hidden md:inline-flex px-5 py-3 bg-navy-900 dark:bg-slate-800 hover:bg-navy-800 dark:hover:bg-slate-700 active:scale-95 text-white font-semibold text-sm rounded-xl sm:rounded-2xl transition-all"
                 >
                   Hire Now
                 </Link>
@@ -124,8 +124,8 @@ export const Home = () => {
             </form>
 
             {/* Quick search chips */}
-            <div className="mt-4 flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500">
-              <span className="font-semibold text-slate-700">Popular:</span>
+            <div className="mt-4 flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Popular:</span>
               {['Electrician', 'Plumber', 'Carpenter', 'Deep Cleaner', 'House Painter'].map((item) => (
                 <button
                   key={item}
@@ -134,7 +134,7 @@ export const Home = () => {
                     setProfessionQuery(item);
                     navigate(`/find-workers?q=${encodeURIComponent(item)}`);
                   }}
-                  className="px-2.5 py-1 bg-white hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 border border-slate-200 rounded-lg text-slate-600 transition-colors shadow-2xs"
+                  className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-200 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 dark:text-slate-300 transition-colors shadow-2xs"
                 >
                   {item}
                 </button>
@@ -144,23 +144,23 @@ export const Home = () => {
 
           {/* Quick Metrics */}
           <div className="mt-12 sm:mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <p className="text-2xl sm:text-3xl font-extrabold text-primary-600">12,500+</p>
-              <p className="text-xs text-slate-600 font-medium mt-1">Verified Workers</p>
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <p className="text-2xl sm:text-3xl font-extrabold text-primary-600 dark:text-primary-400">12,500+</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1">Verified Workers</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">45,000+</p>
-              <p className="text-xs text-slate-600 font-medium mt-1">Completed Jobs</p>
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">45,000+</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1">Completed Jobs</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
               <p className="text-2xl sm:text-3xl font-extrabold text-amber-500 flex items-center justify-center gap-1">
                 4.8 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
               </p>
-              <p className="text-xs text-slate-600 font-medium mt-1">Customer Rating</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1">Customer Rating</p>
             </div>
-            <div className="bg-white/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600">&lt; 15m</p>
-              <p className="text-xs text-slate-600 font-medium mt-1">Average Response</p>
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">&lt; 15m</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1">Average Response</p>
             </div>
           </div>
         </div>
@@ -170,20 +170,20 @@ export const Home = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded-full mb-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60 px-3 py-1 rounded-full mb-2">
               <Sparkles className="w-3.5 h-3.5" />
               Service Catalog
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               Popular Skilled Categories
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Browse top categories or hire on-demand professionals in your neighborhood
             </p>
           </div>
           <Link
             to="/find-workers"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
           >
             <span>View All Categories</span>
             <ArrowRight className="w-4 h-4" />
@@ -290,20 +290,20 @@ export const Home = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full mb-2">
               <Award className="w-3.5 h-3.5" />
               Top Rated Professionals
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               Featured Verified Workers
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Top reviewed technicians and artisans available for instant booking
             </p>
           </div>
           <Link
             to="/find-workers"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
           >
             <span>Explore All 12+ Workers</span>
             <ArrowRight className="w-4 h-4" />
@@ -319,46 +319,46 @@ export const Home = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-slate-100/70 py-16 sm:py-20 rounded-3xl max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-100/70 dark:bg-slate-900/60 border border-transparent dark:border-slate-800/80 py-16 sm:py-20 rounded-3xl max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60 px-3 py-1 rounded-full">
             Simple 3-Step Process
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-3">
             How HireWorker Works
           </h2>
-          <p className="text-sm text-slate-600 mt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
             Hiring a skilled technician has never been smoother
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 text-center relative">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 text-center relative">
             <div className="w-12 h-12 bg-primary-600 text-white font-bold text-xl rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md shadow-primary-500/25">
               1
             </div>
-            <h3 className="font-bold text-base text-slate-900 mb-2">Search or Post a Job</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">Search or Post a Job</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Search vetted profiles by profession & location or post your job requirement with your preferred budget and date.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 text-center relative">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 text-center relative">
             <div className="w-12 h-12 bg-primary-600 text-white font-bold text-xl rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md shadow-primary-500/25">
               2
             </div>
-            <h3 className="font-bold text-base text-slate-900 mb-2">Compare & Chat</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">Compare & Chat</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Review verified badges, customer ratings, portfolio photos, and rates. Direct message workers to clarify project requirements.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 text-center relative">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 text-center relative">
             <div className="w-12 h-12 bg-primary-600 text-white font-bold text-xl rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md shadow-primary-500/25">
               3
             </div>
-            <h3 className="font-bold text-base text-slate-900 mb-2">Hire & Pay Safely</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">Hire & Pay Safely</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Book your preferred time slot. Once the work is completed to your 100% satisfaction, pay the worker and share your verified review.
             </p>
           </div>
@@ -369,7 +369,7 @@ export const Home = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* For Customers */}
-          <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl shadow-primary-600/20">
+          <div className="bg-gradient-to-br from-[#977DFF] via-[#0033FF] to-[#0600AB] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl shadow-[#0033FF]/25">
             <div>
               <span className="text-xs uppercase tracking-wider font-bold bg-white/20 px-3 py-1 rounded-full">
                 For Homeowners & Businesses
@@ -384,14 +384,14 @@ export const Home = () => {
             <div className="mt-8 flex items-center gap-3">
               <Link
                 to="/post-job"
-                className="px-6 py-3 bg-white text-primary-700 hover:bg-primary-50 font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                className="px-6 py-3 bg-white text-[#0033FF] hover:bg-primary-50 font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
               >
                 <span>Post a Job Free</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 to="/find-workers"
-                className="px-5 py-3 bg-primary-700/80 hover:bg-primary-700 text-white font-semibold text-sm rounded-xl transition-all"
+                className="px-5 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl transition-all"
               >
                 Browse Workers
               </Link>
@@ -399,7 +399,7 @@ export const Home = () => {
           </div>
 
           {/* For Workers */}
-          <div className="bg-gradient-to-br from-navy-900 to-navy-950 rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl">
+          <div className="bg-gradient-to-br from-[#0033FF] via-[#0600AB] to-[#00033D] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl border border-[#0600AB]/40">
             <div>
               <span className="text-xs uppercase tracking-wider font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full">
                 For Skilled Tradespeople

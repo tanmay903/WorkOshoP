@@ -1,17 +1,55 @@
 import React, { useState } from 'react';
-import { X, Star, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Star, CheckCircle2, Lock } from 'lucide-react';
 import { RatingStars } from './RatingStars';
 import { storage } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
 
 export const ReviewModal = ({ worker, bookingId, isOpen, onClose, onReviewAdded }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   if (!isOpen) return null;
+
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm animate-fadeIn">
+        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 text-center space-y-4">
+          <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl mx-auto flex items-center justify-center">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-lg text-slate-900">Sign In Required</h3>
+          <p className="text-xs text-slate-600">Please sign in or register to submit a verified rating and review.</p>
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+                navigate('/login', {
+                  state: {
+                    from: `/worker/${worker.id}`,
+                    message: `Please sign in to review ${worker.name}.`,
+                  },
+                });
+              }}
+              className="flex-1 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-all"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();

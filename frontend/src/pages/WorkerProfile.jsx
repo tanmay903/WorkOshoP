@@ -77,14 +77,45 @@ export const WorkerProfile = () => {
     );
   }
 
-  const handleHireService = (srv) => {
+  const handleHireClick = (srv = null) => {
+    if (!user) {
+      navigate('/login', {
+        state: {
+          from: `/worker/${worker.id}`,
+          message: `Please sign in or create an account to hire ${worker.name}.`,
+        },
+      });
+      return;
+    }
     setSelectedService(srv);
     setShowBookingModal(true);
   };
 
   const handleStartChat = () => {
+    if (!user) {
+      navigate('/login', {
+        state: {
+          from: `/worker/${worker.id}`,
+          message: `Please sign in or create an account to message ${worker.name}.`,
+        },
+      });
+      return;
+    }
     const conv = storage.startOrGetConversationWithWorker(worker, user);
     navigate(`/messages?conv=${conv.id}`);
+  };
+
+  const handleReviewClick = () => {
+    if (!user) {
+      navigate('/login', {
+        state: {
+          from: `/worker/${worker.id}`,
+          message: `Please sign in or create an account to write a review for ${worker.name}.`,
+        },
+      });
+      return;
+    }
+    setShowReviewModal(true);
   };
 
   const handleShare = () => {
@@ -181,7 +212,7 @@ export const WorkerProfile = () => {
               {/* Top Quick Actions (Mobile/Tablet friendly) */}
               <div className="flex items-center gap-2 w-full sm:w-auto sm:mb-2">
                 <button
-                  onClick={() => { setSelectedService(null); setShowBookingModal(true); }}
+                  onClick={() => handleHireClick(null)}
                   className="flex-1 sm:flex-initial px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl shadow-md shadow-primary-500/25 transition-all flex items-center justify-center gap-2"
                 >
                   <Briefcase className="w-4 h-4" />
@@ -368,7 +399,7 @@ export const WorkerProfile = () => {
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-base font-extrabold text-slate-900">₹{srv.price}</span>
                           <button
-                            onClick={() => handleHireService(srv)}
+                            onClick={() => handleHireClick(srv)}
                             className="px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-95"
                           >
                             Book
@@ -491,7 +522,7 @@ export const WorkerProfile = () => {
                     </div>
 
                     <button
-                      onClick={() => setShowReviewModal(true)}
+                      onClick={handleReviewClick}
                       className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
                     >
                       Write a Review
@@ -574,7 +605,7 @@ export const WorkerProfile = () => {
 
               <div className="space-y-2">
                 <button
-                  onClick={() => { setSelectedService(null); setShowBookingModal(true); }}
+                  onClick={() => handleHireClick(null)}
                   className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm rounded-xl shadow-md shadow-primary-500/25 transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
                   <Briefcase className="w-4 h-4" />

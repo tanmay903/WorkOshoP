@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-slate-50 text-slate-800 antialiased dark:bg-[#00033D] dark:text-slate-100 transition-colors duration-200;
   }
 }
 
@@ -18,18 +18,35 @@
   background: #f1f5f9;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #00033D;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #0600AB;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #977DFF;
+}
+
 /* Glassmorphism utilities */
 .glass-nav {
   background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+}
+
+.dark .glass-nav {
+  background: rgba(0, 3, 61, 0.92);
   backdrop-filter: blur(10px);
 }
 

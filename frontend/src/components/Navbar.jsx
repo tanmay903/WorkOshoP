@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { storage } from '../utils/storage';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Navbar = () => {
   const { user, logout, switchRole, isCustomer, isWorker, isAdmin } = useAuth();
@@ -78,24 +79,24 @@ export const Navbar = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-nav border-b border-slate-200/80 shadow-xs">
+    <header className="sticky top-0 z-40 w-full glass-nav border-b border-slate-200/80 dark:border-[#0600AB]/30 shadow-xs transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
           <Link to="/home" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-500 flex items-center justify-center text-white shadow-md shadow-primary-500/25 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0600AB] via-[#0033FF] to-[#977DFF] flex items-center justify-center text-white shadow-md shadow-[#0033FF]/30 group-hover:scale-105 transition-transform">
               <Zap className="w-5 h-5 fill-white" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 group-hover:text-primary-600 transition-colors">
+                <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">
                   Hire<span className="text-primary-600">Worker</span>
                 </span>
-                <span className="hidden sm:inline-block bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                <span className="hidden sm:inline-block bg-[#FFCCF2] dark:bg-[#0600AB]/60 text-[#0600AB] dark:text-[#977DFF] text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
                   Pro
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 hidden sm:block tracking-wide">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:block tracking-wide">
                 Find Skilled People. Get Work Done.
               </p>
             </div>
@@ -110,8 +111,8 @@ export const Navbar = () => {
                 className={({ isActive }) =>
                   `px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                     isActive
-                      ? 'text-primary-600 bg-primary-50/70 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                      ? 'text-primary-600 dark:text-primary-400 bg-primary-50/70 dark:bg-primary-950/60 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
                   }`
                 }
               >
@@ -122,10 +123,13 @@ export const Navbar = () => {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+
             {/* Messages Icon */}
             <Link
               to="/messages"
-              className="relative p-2 rounded-xl text-slate-600 hover:text-primary-600 hover:bg-slate-100 transition-colors"
+              className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Messages"
             >
               <MessageSquare className="w-5 h-5" />
@@ -139,7 +143,7 @@ export const Navbar = () => {
             {/* Notifications Icon */}
             <Link
               to="/notifications"
-              className="relative p-2 rounded-xl text-slate-600 hover:text-primary-600 hover:bg-slate-100 transition-colors"
+              className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
@@ -154,35 +158,35 @@ export const Navbar = () => {
             <div className="relative hidden xl:block">
               <button
                 onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors border border-slate-200 dark:border-slate-700"
               >
                 <Layers className="w-3.5 h-3.5 text-primary-600" />
-                <span>Persona: <strong className="capitalize text-slate-900">{user?.role || 'Guest'}</strong></span>
+                <span>Persona: <strong className="capitalize text-slate-900 dark:text-white">{user?.role || 'Guest'}</strong></span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
 
               {roleSwitcherOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-50 animate-fadeIn">
                   <div className="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
                     Switch Demo Persona
                   </div>
                   <button
                     onClick={() => { switchRole('customer'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 ${isCustomer ? 'font-bold text-primary-600' : 'text-slate-700'}`}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isCustomer ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
                   >
                     <span>Customer (Aarav)</span>
                     {isCustomer && <span className="w-2 h-2 rounded-full bg-primary-600" />}
                   </button>
                   <button
                     onClick={() => { switchRole('worker'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 ${isWorker ? 'font-bold text-primary-600' : 'text-slate-700'}`}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isWorker ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
                   >
                     <span>Worker (Rohit - Electrician)</span>
                     {isWorker && <span className="w-2 h-2 rounded-full bg-primary-600" />}
                   </button>
                   <button
                     onClick={() => { switchRole('admin'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 ${isAdmin ? 'font-bold text-primary-600' : 'text-slate-700'}`}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isAdmin ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
                   >
                     <span>Admin (Vikramaditya)</span>
                     {isAdmin && <span className="w-2 h-2 rounded-full bg-primary-600" />}
@@ -196,25 +200,25 @@ export const Navbar = () => {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100 border border-slate-200 transition-colors"
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
                 >
                   <img
                     src={user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
                     alt={user.name}
                     className="w-8 h-8 rounded-full object-cover ring-1 ring-primary-500"
                   />
-                  <span className="hidden sm:inline-block font-semibold text-xs text-slate-800 max-w-[100px] truncate">
+                  <span className="hidden sm:inline-block font-semibold text-xs text-slate-800 dark:text-slate-200 max-w-[100px] truncate">
                     {user.name.split(' ')[0]}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
 
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fadeIn divide-y divide-slate-100">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 animate-fadeIn divide-y divide-slate-100 dark:divide-slate-800">
                     <div className="px-4 py-2.5">
-                      <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 uppercase tracking-wide">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 uppercase tracking-wide">
                         {user.role}
                       </span>
                     </div>
@@ -223,7 +227,7 @@ export const Navbar = () => {
                       {isCustomer && (
                         <Link
                           to="/customer-dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600"
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
                         >
                           <Briefcase className="w-4 h-4 text-slate-400" />
                           Customer Dashboard
@@ -232,7 +236,7 @@ export const Navbar = () => {
                       {isWorker && (
                         <Link
                           to="/worker-dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600"
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
                         >
                           <UserCheck className="w-4 h-4 text-slate-400" />
                           Worker Dashboard
@@ -241,7 +245,7 @@ export const Navbar = () => {
                       {isAdmin && (
                         <Link
                           to="/admin"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600"
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
                         >
                           <ShieldAlert className="w-4 h-4 text-slate-400" />
                           Admin Console
@@ -249,14 +253,14 @@ export const Navbar = () => {
                       )}
                       <Link
                         to="/bookings"
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600"
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         <Calendar className="w-4 h-4 text-slate-400" />
                         My Bookings
                       </Link>
                       <Link
                         to="/my-jobs"
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-primary-50 hover:text-primary-600"
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
                       >
                         <FileText className="w-4 h-4 text-slate-400" />
                         Posted Jobs
@@ -269,21 +273,21 @@ export const Navbar = () => {
                       </div>
                       <button
                         onClick={() => { switchRole('customer'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 hover:bg-slate-50 flex items-center justify-between"
+                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
                       >
                         Switch to Customer
                         {isCustomer && <span className="text-primary-600 text-xs font-bold">&check;</span>}
                       </button>
                       <button
                         onClick={() => { switchRole('worker'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 hover:bg-slate-50 flex items-center justify-between"
+                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
                       >
                         Switch to Worker
                         {isWorker && <span className="text-primary-600 text-xs font-bold">&check;</span>}
                       </button>
                       <button
                         onClick={() => { switchRole('admin'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 hover:bg-slate-50 flex items-center justify-between"
+                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
                       >
                         Switch to Admin
                         {isAdmin && <span className="text-primary-600 text-xs font-bold">&check;</span>}
@@ -293,7 +297,7 @@ export const Navbar = () => {
                     <div className="py-1">
                       <button
                         onClick={() => { logout(); navigate('/'); }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out
@@ -306,7 +310,7 @@ export const Navbar = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-primary-600 transition-colors"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 transition-colors"
                 >
                   Log In
                 </Link>
@@ -322,7 +326,7 @@ export const Navbar = () => {
             {/* Mobile Hamburger Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -332,7 +336,12 @@ export const Navbar = () => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
+        <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
+          {/* Theme switcher inside mobile drawer */}
+          <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
+            <ThemeToggle showLabel className="w-full justify-start py-2.5 px-3" />
+          </div>
+
           <div className="space-y-1">
             {navLinks.map((link) => (
               <NavLink
@@ -340,7 +349,9 @@ export const Navbar = () => {
                 to={link.path}
                 className={({ isActive }) =>
                   `block px-3 py-2.5 rounded-xl text-sm font-semibold ${
-                    isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-700 hover:bg-slate-50'
+                    isActive
+                      ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`
                 }
               >
@@ -349,31 +360,31 @@ export const Navbar = () => {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-slate-100 space-y-2">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">
               Dashboards & Tools
             </div>
             <Link
               to="/customer-dashboard"
-              className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-xl"
+              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
             >
               Customer Dashboard
             </Link>
             <Link
               to="/worker-dashboard"
-              className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-xl"
+              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
             >
               Worker Dashboard
             </Link>
             <Link
               to="/admin"
-              className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-xl"
+              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
             >
               Admin Dashboard
             </Link>
             <Link
               to="/register-worker"
-              className="block px-3 py-2 text-sm font-semibold text-primary-600 bg-primary-50 rounded-xl"
+              className="block px-3 py-2 text-sm font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60 rounded-xl"
             >
               Register as Worker
             </Link>

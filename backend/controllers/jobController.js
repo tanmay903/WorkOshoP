@@ -6,9 +6,14 @@ import { sendNotification } from '../utils/sendNotification.js';
 // @access  Private (Customer)
 export const createJob = async (req, res, next) => {
   try {
+    if (!req.body.location || !req.body.location.trim()) {
+      return res.status(400).json({ success: false, message: 'Job location is required.' });
+    }
+
     const jobData = {
       ...req.body,
       customerId: req.user.id,
+      location: req.body.location.trim(),
     };
 
     const job = await Job.create(jobData);
