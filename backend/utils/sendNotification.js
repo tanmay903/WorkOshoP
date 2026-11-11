@@ -6,6 +6,12 @@ export const setSocketIO = (io) => {
   ioInstance = io;
 };
 
+export const broadcastEvent = (event, payload) => {
+  if (ioInstance && event) {
+    ioInstance.emit(event, payload);
+  }
+};
+
 export const sendNotification = async ({ userId, title, message, type, link }) => {
   try {
     const notification = await Notification.create({

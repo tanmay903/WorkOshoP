@@ -1,6 +1,6 @@
-# HireWorker Enterprise Backend
+# WorkOshop Enterprise Backend
 
-Scalable, secure, and production-ready Node.js, Express, and MongoDB backend for **HireWorker** ("Find Skilled People. Get Work Done.").
+Scalable, secure, and production-ready Node.js, Express, and MongoDB backend for **WorkOshop** ("Find Skilled People. Get Work Done.").
 
 ---
 

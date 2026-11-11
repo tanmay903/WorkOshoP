@@ -13,21 +13,25 @@ import {
   LogOut,
   UserCheck,
   ShieldAlert,
+  MapPin,
+  ShieldCheck,
   Calendar,
-  Layers,
   Sparkles,
-  Zap,
   Settings
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCustomerLocation } from '../context/LocationContext';
 import { storage } from '../utils/storage';
-import { ThemeToggle } from './ThemeToggle';
+import { Avatar } from './Avatar';
+import { MapPickerModal } from './MapPickerModal';
 
 export const Navbar = () => {
-  const { user, logout, switchRole, isCustomer, isWorker, isAdmin } = useAuth();
+  const { user, logout, isCustomer, isWorker, isAdmin } = useAuth();
+  const { customerLocation, defaultMapLocation, setSiteLocation, clearSiteLocation } = useCustomerLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -39,7 +43,6 @@ export const Navbar = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileDropdownOpen(false);
-    setRoleSwitcherOpen(false);
   }, [location.pathname]);
 
   // Click outside to close profile dropdown
@@ -47,7 +50,6 @@ export const Navbar = () => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setProfileDropdownOpen(false);
-        setRoleSwitcherOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -60,7 +62,7 @@ export const Navbar = () => {
       const notifs = storage.getNotifications();
       setUnreadNotifications(notifs.filter(n => !n.read).length);
 
-      const convs = storage.getConversations();
+      const convs = storage.getConversationsForUser(user);
       const totalUnread = convs.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
       setUnreadMessages(totalUnread);
     };
@@ -68,48 +70,82 @@ export const Navbar = () => {
     updateBadges();
     const interval = setInterval(updateBadges, 3000);
     return () => clearInterval(interval);
-  }, [location]);
+  }, [location, user]);
 
-  const navLinks = [
-    { name: 'Home', path: '/home' },
-    { name: 'Find Workers', path: '/find-workers' },
-    { name: 'Post Job', path: '/post-job' },
-    { name: 'My Jobs', path: '/my-jobs' },
-    { name: 'Bookings', path: '/bookings' },
-  ];
+  // Dynamic navigation links based on user role
+  const getNavLinks = () => {
+    if (isWorker) {
+      return [
+        { name: 'Dashboard', path: '/worker-dashboard' },
+        { name: 'Available Works', path: '/available-works' },
+        { name: 'Bookings', path: '/worker/bookings' },
+        { name: 'Upload Certificates', path: '/worker/certificates' },
+        { name: 'My Profile & Rates', path: '/worker/my-profile' },
+      ];
+    }
+    if (isAdmin) {
+      return [
+        { name: 'Admin Console', path: '/admin' },
+        { name: 'Worker Approvals', path: '/admin/verifications' },
+        { name: 'User Directory', path: '/admin/users' },
+        { name: 'All Bookings', path: '/admin/bookings' },
+        { name: 'Analytics', path: '/admin/analytics' },
+      ];
+    }
+    // Customer (default)
+    return [
+      { name: 'Home', path: '/home' },
+      { name: 'Find Workers', path: '/find-workers' },
+      { name: 'Nearby Workers', path: '/nearby-workers' },
+      { name: 'Post Job', path: '/post-job' },
+      { name: 'My Jobs', path: '/my-jobs' },
+      { name: 'My Bookings', path: '/bookings' },
+    ];
+  };
+
+  const navLinks = getNavLinks();
+  const homeDestination = isWorker ? '/worker-dashboard' : isAdmin ? '/admin' : '/home';
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-nav border-b border-slate-200/80 dark:border-[#0600AB]/30 shadow-xs transition-colors duration-200">
+    <header className="sticky top-0 z-40 w-full glass-nav border-b border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo */}
-          <Link to="/home" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0600AB] via-[#0033FF] to-[#977DFF] flex items-center justify-center text-white shadow-md shadow-[#0033FF]/30 group-hover:scale-105 transition-transform">
-              <Zap className="w-5 h-5 fill-white" />
+          {/* Role-Aware Logo */}
+          <Link to={homeDestination} className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden bg-[#0F172A] flex items-center justify-center shadow-md shadow-[#2563EB]/20 group-hover:scale-105 group-hover:rotate-2 transition-transform duration-300 ring-1 ring-slate-200 shrink-0">
+              <img
+                src="/logo.jpg"
+                alt="WorkOshop Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">
-                  Hire<span className="text-primary-600">Worker</span>
+                <span className="font-extrabold text-xl tracking-tight text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+                  Work<span className="text-[#2563EB]">Oshop</span>
                 </span>
-                <span className="hidden sm:inline-block bg-[#FFCCF2] dark:bg-[#0600AB]/60 text-[#0600AB] dark:text-[#977DFF] text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
-                  Pro
+                <span className="hidden sm:inline-block bg-teal-50 text-[#0D9488] border border-teal-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  {isWorker ? 'Worker Pro' : isAdmin ? 'Super Admin' : 'Customer'}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:block tracking-wide">
-                Find Skilled People. Get Work Done.
+              <p className="text-[10px] text-slate-500 hidden sm:block tracking-wide">
+                {isWorker
+                  ? 'Tradesperson Portal & Client Bids'
+                  : isAdmin
+                  ? 'Governance, Auditing & Controls'
+                  : 'Find Skilled People. Get Work Done.'}
               </p>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links (Changes with Role) */}
           <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
                 to={link.path}
                 className={({ isActive }) =>
-                  `px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  `px-2.5 lg:px-3 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
                     isActive
                       ? 'text-primary-600 dark:text-primary-400 bg-primary-50/70 dark:bg-primary-950/60 shadow-xs'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
@@ -123,8 +159,43 @@ export const Navbar = () => {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Theme Toggle Button */}
-            <ThemeToggle />
+            {/* Site-Wide Customer Location Selector */}
+            {!isWorker && !isAdmin && (
+              <div className="hidden sm:inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:border-primary-400 transition-colors overflow-hidden max-w-[200px]">
+                <button
+                  type="button"
+                  onClick={() => setLocationModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate"
+                  title={
+                    customerLocation.isSet
+                      ? `Site location: ${customerLocation.label} (Click to change)`
+                      : 'Set your location for the whole site'
+                  }
+                >
+                  <MapPin
+                    className={`w-3.5 h-3.5 shrink-0 ${
+                      customerLocation.isSet ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400'
+                    }`}
+                  />
+                  <span className="truncate">
+                    {customerLocation.isSet
+                      ? customerLocation.district || customerLocation.label
+                      : 'Select Location'}
+                  </span>
+                </button>
+                {customerLocation.isSet && (
+                  <button
+                    type="button"
+                    onClick={clearSiteLocation}
+                    className="pr-2 pl-0.5 py-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Reset location to All Assam"
+                    aria-label="Clear selected location"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Messages Icon */}
             <Link
@@ -154,47 +225,6 @@ export const Navbar = () => {
               )}
             </Link>
 
-            {/* Role Switcher Pill (Quick demo switcher) */}
-            <div className="relative hidden xl:block">
-              <button
-                onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors border border-slate-200 dark:border-slate-700"
-              >
-                <Layers className="w-3.5 h-3.5 text-primary-600" />
-                <span>Persona: <strong className="capitalize text-slate-900 dark:text-white">{user?.role || 'Guest'}</strong></span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-
-              {roleSwitcherOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-50 animate-fadeIn">
-                  <div className="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                    Switch Demo Persona
-                  </div>
-                  <button
-                    onClick={() => { switchRole('customer'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isCustomer ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
-                  >
-                    <span>Customer (Aarav)</span>
-                    {isCustomer && <span className="w-2 h-2 rounded-full bg-primary-600" />}
-                  </button>
-                  <button
-                    onClick={() => { switchRole('worker'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isWorker ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
-                  >
-                    <span>Worker (Rohit - Electrician)</span>
-                    {isWorker && <span className="w-2 h-2 rounded-full bg-primary-600" />}
-                  </button>
-                  <button
-                    onClick={() => { switchRole('admin'); setRoleSwitcherOpen(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${isAdmin ? 'font-bold text-primary-600' : 'text-slate-700 dark:text-slate-200'}`}
-                  >
-                    <span>Admin (Vikramaditya)</span>
-                    {isAdmin && <span className="w-2 h-2 rounded-full bg-primary-600" />}
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* User Profile or Login/Register */}
             {user ? (
               <div className="relative" ref={dropdownRef}>
@@ -202,13 +232,13 @@ export const Navbar = () => {
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
                 >
-                  <img
-                    src={user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full object-cover ring-1 ring-primary-500"
+                  <Avatar
+                    name={user.name}
+                    src={isWorker ? user.avatar : ''}
+                    className="w-8 h-8 rounded-full text-xs ring-1 ring-primary-500"
                   />
                   <span className="hidden sm:inline-block font-semibold text-xs text-slate-800 dark:text-slate-200 max-w-[100px] truncate">
-                    {user.name.split(' ')[0]}
+                    {(user?.name || 'User').split(' ')[0]}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
@@ -225,78 +255,122 @@ export const Navbar = () => {
 
                     <div className="py-1">
                       {isCustomer && (
-                        <Link
-                          to="/customer-dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          <Briefcase className="w-4 h-4 text-slate-400" />
-                          Customer Dashboard
-                        </Link>
+                        <>
+                          <Link
+                            to="/customer-dashboard"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Briefcase className="w-4 h-4 text-slate-400" />
+                            Customer Dashboard
+                          </Link>
+                          <Link
+                            to="/find-workers"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Users className="w-4 h-4 text-slate-400" />
+                            Discover Workers
+                          </Link>
+                          <Link
+                            to="/bookings"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            My Bookings
+                          </Link>
+                          <Link
+                            to="/my-jobs"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <FileText className="w-4 h-4 text-slate-400" />
+                            Posted Jobs
+                          </Link>
+                        </>
                       )}
+
                       {isWorker && (
-                        <Link
-                          to="/worker-dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          <UserCheck className="w-4 h-4 text-slate-400" />
-                          Worker Dashboard
-                        </Link>
+                        <>
+                          <Link
+                            to="/worker-dashboard"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <UserCheck className="w-4 h-4 text-slate-400" />
+                            Worker Dashboard
+                          </Link>
+                          <Link
+                            to="/available-works"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Briefcase className="w-4 h-4 text-slate-400" />
+                            Available Works
+                          </Link>
+                          <Link
+                            to="/worker/bookings"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            Customer Bookings
+                          </Link>
+                          <Link
+                            to="/worker/certificates"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-slate-400" />
+                            Upload Certificates
+                          </Link>
+                          <Link
+                            to="/worker/my-profile"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Settings className="w-4 h-4 text-slate-400" />
+                            My Profile & Rates
+                          </Link>
+                        </>
                       )}
+
                       {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
-                        >
-                          <ShieldAlert className="w-4 h-4 text-slate-400" />
-                          Admin Console
-                        </Link>
+                        <>
+                          <Link
+                            to="/admin"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-slate-400" />
+                            Admin Console
+                          </Link>
+                          <Link
+                            to="/admin/verifications"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-slate-400" />
+                            Worker Approvals
+                          </Link>
+                          <Link
+                            to="/admin/users"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Users className="w-4 h-4 text-slate-400" />
+                            User Directory
+                          </Link>
+                          <Link
+                            to="/admin/bookings"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            All Bookings
+                          </Link>
+                          <Link
+                            to="/admin/analytics"
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
+                          >
+                            <Sparkles className="w-4 h-4 text-slate-400" />
+                            Analytics Reports
+                          </Link>
+                        </>
                       )}
-                      <Link
-                        to="/bookings"
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
-                      >
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        My Bookings
-                      </Link>
-                      <Link
-                        to="/my-jobs"
-                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400"
-                      >
-                        <FileText className="w-4 h-4 text-slate-400" />
-                        Posted Jobs
-                      </Link>
-                    </div>
-
-                    <div className="py-1">
-                      <div className="px-4 py-1.5 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                        Quick Demo Role Switch
-                      </div>
-                      <button
-                        onClick={() => { switchRole('customer'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
-                      >
-                        Switch to Customer
-                        {isCustomer && <span className="text-primary-600 text-xs font-bold">&check;</span>}
-                      </button>
-                      <button
-                        onClick={() => { switchRole('worker'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
-                      >
-                        Switch to Worker
-                        {isWorker && <span className="text-primary-600 text-xs font-bold">&check;</span>}
-                      </button>
-                      <button
-                        onClick={() => { switchRole('admin'); setProfileDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-1.5 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
-                      >
-                        Switch to Admin
-                        {isAdmin && <span className="text-primary-600 text-xs font-bold">&check;</span>}
-                      </button>
                     </div>
 
                     <div className="py-1">
                       <button
-                        onClick={() => { logout(); navigate('/'); }}
+                        onClick={() => { logout(); navigate('/login'); }}
                         className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                       >
                         <LogOut className="w-4 h-4" />
@@ -334,15 +408,69 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {locationModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <MapPickerModal
+            isOpen={locationModalOpen}
+            onClose={() => setLocationModalOpen(false)}
+            initialValue={
+              customerLocation.isSet ? customerLocation.label : defaultMapLocation.label
+            }
+            initialCoords={
+              customerLocation.isSet
+                ? { lat: customerLocation.lat, lng: customerLocation.lng }
+                : { lat: defaultMapLocation.lat, lng: defaultMapLocation.lng }
+            }
+            title="Set Your Site-Wide Location"
+            onSelectLocation={(loc, nearest, exactCoords) => {
+              setSiteLocation({
+                label: loc || (nearest ? `${nearest.town}, ${nearest.district}, Assam` : ''),
+                district: nearest?.district || '',
+                lat: exactCoords?.lat ?? nearest?.lat,
+                lng: exactCoords?.lng ?? nearest?.lng,
+              });
+            }}
+          />,
+          document.body
+        )}
+
+      {/* Mobile Drawer Menu (Role-Specific) */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 pt-3 pb-6 space-y-3 animate-fadeIn">
-          {/* Theme switcher inside mobile drawer */}
-          <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
-            <ThemeToggle showLabel className="w-full justify-start py-2.5 px-3" />
-          </div>
-
           <div className="space-y-1">
+            {!isWorker && !isAdmin && (
+              <div className="mb-2 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setLocationModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 truncate flex-1 text-left"
+                >
+                  <MapPin
+                    className={`w-4 h-4 shrink-0 ${
+                      customerLocation.isSet ? 'text-primary-600' : 'text-slate-400'
+                    }`}
+                  />
+                  <span className="truncate">
+                    {customerLocation.isSet
+                      ? `Location: ${customerLocation.label}`
+                      : 'Select Your Location (All Assam)'}
+                  </span>
+                </button>
+                {customerLocation.isSet && (
+                  <button
+                    type="button"
+                    onClick={clearSiteLocation}
+                    className="text-xs font-semibold text-red-500 hover:text-red-600 px-1.5 py-0.5 rounded"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
@@ -359,39 +487,10 @@ export const Navbar = () => {
               </NavLink>
             ))}
           </div>
-
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">
-              Dashboards & Tools
-            </div>
-            <Link
-              to="/customer-dashboard"
-              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
-            >
-              Customer Dashboard
-            </Link>
-            <Link
-              to="/worker-dashboard"
-              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
-            >
-              Worker Dashboard
-            </Link>
-            <Link
-              to="/admin"
-              className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
-            >
-              Admin Dashboard
-            </Link>
-            <Link
-              to="/register-worker"
-              className="block px-3 py-2 text-sm font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/60 rounded-xl"
-            >
-              Register as Worker
-            </Link>
-          </div>
         </div>
       )}
     </header>
   );
 };
+
 

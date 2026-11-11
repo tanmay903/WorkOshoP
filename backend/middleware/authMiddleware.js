@@ -19,7 +19,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hireworker_super_secret_jwt_key_2026_xyz_789');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'workoshop_super_secret_jwt_key_2026_xyz_789');
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
@@ -56,7 +56,7 @@ export const optionalAuth = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hireworker_super_secret_jwt_key_2026_xyz_789');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'workoshop_super_secret_jwt_key_2026_xyz_789');
       req.user = await User.findById(decoded.id).select('-password');
     } catch {
       // Continue unauthenticated

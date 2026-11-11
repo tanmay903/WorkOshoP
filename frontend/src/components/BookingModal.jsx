@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
@@ -12,14 +12,21 @@ import {
   ArrowRight,
   AlertCircle,
   LocateFixed,
-  DollarSign
+  DollarSign,
+  Map as MapIcon,
+  Zap,
+  Calculator
 } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { useCustomerLocation } from '../context/LocationContext';
 import { api } from '../services/api';
+import { Avatar } from './Avatar';
+import { MapPickerModal } from './MapPickerModal';
 
 export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
   const { user } = useAuth();
+  const { customerLocation, defaultMapLocation } = useCustomerLocation();
   const navigate = useNavigate();
 
   const [serviceDate, setServiceDate] = useState(() => {
@@ -29,8 +36,10 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
   });
   const [serviceTime, setServiceTime] = useState('10:00 AM');
   
-  // Real location only — no fake default dummy addresses
-  const [address, setAddress] = useState(user?.address || '');
+  // Customer's saved or selected location — no fake dummy addresses
+  const [address, setAddress] = useState(
+    user?.address || (customerLocation.isSet ? customerLocation.label : '')
+  );
   const [locationError, setLocationError] = useState('');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [instructions, setInstructions] = useState('');
@@ -44,8 +53,36 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [createdBooking, setCreatedBooking] = useState(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [estimatedHours, setEstimatedHours] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedService(
+        initialService || worker.services?.[0] || {
+          title: `General ${worker.profession} Service`,
+          price: worker.hourlyRate || 300,
+        }
+      );
+      setIsConfirmed(false);
+      setCreatedBooking(null);
+      setLocationError('');
+      setIsEmergency(false);
+      setEstimatedHours(1);
+      if (!address && (user?.address || customerLocation.isSet)) {
+        setAddress(user?.address || customerLocation.label);
+      }
+    }
+  }, [isOpen, initialService, worker, user?.address, customerLocation.isSet, customerLocation.label]);
 
   if (!isOpen) return null;
+
+  const baseServiceCost = Number(selectedService?.price || worker.hourlyRate || 300);
+  const labourCost = baseServiceCost * estimatedHours;
+  const emergencyFee = isEmergency ? 150 : 0;
+  const visitFee = 0;
+  const totalEstimate = labourCost + emergencyFee + visitFee;
 
   // Handle location detection via Geolocation API
   const handleDetectLocation = () => {
@@ -104,6 +141,7 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
     const bookingPayload = {
       workerId: worker.id,
       workerName: worker.name,
+      workerEmail: worker.email || '',
       workerProfession: worker.profession,
       workerAvatar: worker.avatar,
       customerId: user.id,
@@ -112,12 +150,22 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
       customerEmail: user.email || '',
       serviceTitle: selectedService.title,
       serviceDate,
-      serviceTime,
+      serviceTime: isEmergency ? 'ASAP Emergency (Within 45 mins)' : serviceTime,
       address: trimmedAddress,
       location: trimmedAddress,
       instructions: instructions.trim(),
-      estimatedAmount: selectedService.price,
-      amount: selectedService.price,
+      isEmergency,
+      estimatedHours,
+      costBreakdown: {
+        baseUnitRate: baseServiceCost,
+        hoursOrUnits: estimatedHours,
+        labourCost,
+        emergencyFee,
+        visitFee,
+        totalEstimate,
+      },
+      estimatedAmount: totalEstimate,
+      amount: totalEstimate,
       status: 'Pending',
     };
 
@@ -142,15 +190,15 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden text-slate-800 dark:text-slate-100 transition-colors">
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden text-slate-800 dark:text-slate-100 transition-colors animate-scale-in">
         
         {/* Modal Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
+            <Avatar
+              name={worker.name}
               src={worker.avatar}
-              alt={worker.name}
-              className="w-11 h-11 rounded-full object-cover border-2 border-white/40 shadow-sm"
+              className="w-11 h-11 rounded-full text-sm border-2 border-white/40 shadow-sm"
             />
             <div>
               <h3 className="font-bold text-lg leading-tight flex items-center gap-2">
@@ -185,7 +233,7 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
                 Log In to Hire {worker.name}
               </h4>
               <p className="text-slate-600 dark:text-slate-300 text-sm mt-2 max-w-md mx-auto leading-relaxed">
-                You must have an active HireWorker account to book skilled tradespeople, receive guaranteed on-site arrival, and track your work orders.
+                You must have an active WorkOshop account to book skilled tradespeople, receive guaranteed on-site arrival, and track your work orders.
               </p>
             </div>
 
@@ -220,37 +268,45 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
         ) : isConfirmed ? (
           /* CASE 2: BOOKING CONFIRMED SCREEN */
           <div className="p-8 text-center space-y-5 animate-fadeIn">
-            <div className="w-16 h-16 mx-auto bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center animate-bounce">
+            <div className="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center animate-bounce">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wider font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+              <span className="text-xs uppercase tracking-wider font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                 Booking Requested
               </span>
-              <h4 className="text-2xl font-bold text-slate-800 mt-2">
+              <h4 className="text-2xl font-bold text-slate-800 dark:text-white mt-2 neon-outline">
                 Booking #{createdBooking?.bookingNumber} Confirmed!
               </h4>
-              <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto">
-                Your request has been sent to <strong>{worker.name}</strong>. You will receive real-time updates under your Bookings dashboard.
+              <p className="text-slate-600 dark:text-slate-300 text-sm mt-1 max-w-md mx-auto">
+                Your request has been sent to <strong className="text-slate-900 dark:text-white">{worker.name}</strong>. You will receive real-time updates under your Bookings dashboard.
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-100 text-xs space-y-2 text-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 text-left border border-slate-200 dark:border-slate-700 text-xs space-y-2 text-slate-700 dark:text-slate-200">
               <div className="flex justify-between">
-                <span className="text-slate-500">Service:</span>
-                <span className="font-semibold text-slate-900">{selectedService.title}</span>
+                <span className="text-slate-500 dark:text-slate-400">Service:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedService.title}</span>
+              </div>
+              {isEmergency && (
+                <div className="flex justify-between">
+                  <span className="text-rose-600 font-semibold">Dispatch Mode:</span>
+                  <span className="font-bold text-rose-600">Emergency Priority (Under 45 min)</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Scheduled Time:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {serviceDate} &bull; {isEmergency ? 'ASAP Priority' : serviceTime}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Scheduled Time:</span>
-                <span className="font-semibold text-slate-900">{serviceDate} at {serviceTime}</span>
+                <span className="text-slate-500 dark:text-slate-400">Work Location:</span>
+                <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[240px]">{address}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Work Location:</span>
-                <span className="font-semibold text-slate-900 truncate max-w-[240px]">{address}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200 pt-2 text-sm">
-                <span className="font-medium text-slate-700">Estimated Cost:</span>
-                <span className="font-bold text-primary-600">₹{selectedService.price}</span>
+              <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 text-sm">
+                <span className="font-medium text-slate-700 dark:text-slate-300">Estimated Total:</span>
+                <span className="font-bold text-[#2563EB] dark:text-blue-400">₹{totalEstimate}</span>
               </div>
             </div>
 
@@ -266,7 +322,7 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
               </button>
               <button
                 onClick={onClose}
-                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors"
+                className="py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-colors"
               >
                 Close
               </button>
@@ -354,15 +410,25 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
                   <span>Work Location / Address</span>
                   <span className="text-rose-500 font-bold">* Required</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={handleDetectLocation}
-                  disabled={isDetectingLocation}
-                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-semibold flex items-center gap-1 hover:underline"
-                >
-                  <LocateFixed className={`w-3.5 h-3.5 ${isDetectingLocation ? 'animate-spin' : ''}`} />
-                  <span>{isDetectingLocation ? 'Detecting...' : 'Use My GPS'}</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMapPicker(true)}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-semibold flex items-center gap-1 hover:underline"
+                  >
+                    <MapIcon className="w-3.5 h-3.5" />
+                    <span>Pick on Map</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={isDetectingLocation}
+                    className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-semibold flex items-center gap-1 hover:underline"
+                  >
+                    <LocateFixed className={`w-3.5 h-3.5 ${isDetectingLocation ? 'animate-spin' : ''}`} />
+                    <span>{isDetectingLocation ? 'Detecting...' : 'Use My GPS'}</span>
+                  </button>
+                </div>
               </div>
 
               <div className="relative">
@@ -413,11 +479,91 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
               </div>
             </div>
 
+            {/* Emergency Service Toggle */}
+            <div
+              onClick={() => {
+                const next = !isEmergency;
+                setIsEmergency(next);
+                if (next) {
+                  setServiceDate(new Date().toISOString().split('T')[0]);
+                }
+              }}
+              className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                isEmergency
+                  ? 'bg-rose-50/90 border-rose-300 ring-1 ring-rose-300'
+                  : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200'
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isEmergency ? 'bg-rose-600 text-white' : 'bg-white text-rose-500 border border-slate-200'
+                }`}>
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-[#0F172A]">Emergency Priority Service</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                      +₹150 Urgent
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Fast-track today dispatch within 45 mins for urgent electrical, plumbing, or lockouts.
+                  </p>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={isEmergency}
+                onChange={() => {}}
+                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer shrink-0"
+              />
+            </div>
+
+            {/* Estimated Service Cost Breakdown */}
+            <div className="p-3.5 bg-[#F8FAFC] dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#1E293B] dark:text-white flex items-center gap-1.5">
+                  <Calculator className="w-3.5 h-3.5 text-[#2563EB]" />
+                  Estimated Cost Breakdown
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-500">Est. Units/Hrs:</span>
+                  <select
+                    value={estimatedHours}
+                    onChange={(e) => setEstimatedHours(Number(e.target.value))}
+                    className="px-2 py-0.5 rounded-lg border border-slate-200 bg-white text-[#1E293B] font-bold text-xs outline-none focus:ring-1 focus:ring-[#2563EB]"
+                  >
+                    {[1, 2, 3, 4, 6, 8].map((hr) => (
+                      <option key={hr} value={hr}>{hr} {hr === 1 ? 'unit/hr' : 'units/hrs'}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-1 text-slate-600 dark:text-slate-300 border-t border-slate-200/80">
+                <div className="flex justify-between">
+                  <span>Base Service ({estimatedHours} &times; ₹{baseServiceCost})</span>
+                  <span className="font-semibold text-[#1E293B]">₹{labourCost}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Inspection & Visiting Charge</span>
+                  <span className="font-semibold text-[#16A34A]">Free (₹0)</span>
+                </div>
+                {isEmergency && (
+                  <div className="flex justify-between text-rose-600 font-semibold">
+                    <span>Emergency Priority Dispatch</span>
+                    <span>+₹{emergencyFee}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Price Guarantee Banner */}
-            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-3 p-3 bg-teal-50/70 dark:bg-slate-800/80 rounded-xl border border-teal-200/80 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
+              <ShieldCheck className="w-5 h-5 text-[#14B8A6] shrink-0" />
               <span>
-                <strong>HireWorker Guarantee:</strong> Pay after service satisfaction. No hidden advance charges.
+                <strong>WorkOshop Guarantee:</strong> Pay after service satisfaction. No hidden advance charges.
               </span>
             </div>
 
@@ -425,7 +571,7 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
             <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
               <div>
                 <span className="text-xs text-slate-500 dark:text-slate-400 block">Total Estimate</span>
-                <span className="text-xl font-bold text-slate-900 dark:text-white">₹{selectedService.price}</span>
+                <span className="text-xl font-extrabold text-[#0F172A] dark:text-white">₹{totalEstimate}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -454,6 +600,22 @@ export const BookingModal = ({ worker, initialService, isOpen, onClose }) => {
           </form>
         )}
       </div>
+
+      <MapPickerModal
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        initialValue={address || defaultMapLocation?.label || ''}
+        initialCoords={
+          !address || (customerLocation.isSet && address === customerLocation.label)
+            ? { lat: defaultMapLocation.lat, lng: defaultMapLocation.lng }
+            : null
+        }
+        title="Pin Your Work Location"
+        onSelectLocation={(loc) => {
+          setAddress(loc);
+          if (locationError) setLocationError('');
+        }}
+      />
     </div>
   );
 };

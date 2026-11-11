@@ -27,8 +27,8 @@ export const MyJobs = () => {
   const [editFormData, setEditFormData] = useState({ title: '', budget: '', description: '', location: '' });
 
   useEffect(() => {
-    setJobs(storage.getJobs());
-  }, []);
+    setJobs(storage.getJobsForCustomer(user));
+  }, [user]);
 
   const statuses = ['All', 'Open', 'Applications Received', 'In Progress', 'Completed', 'Cancelled'];
 
@@ -39,8 +39,8 @@ export const MyJobs = () => {
 
   const handleDeleteJob = (jobId) => {
     if (window.confirm('Are you sure you want to delete this job listing?')) {
-      const updated = storage.deleteJob(jobId);
-      setJobs(updated);
+      storage.deleteJob(jobId);
+      setJobs(storage.getJobsForCustomer(user));
     }
   };
 
@@ -58,13 +58,13 @@ export const MyJobs = () => {
     e.preventDefault();
     if (!editingJob) return;
 
-    const updatedList = storage.updateJob(editingJob.id, {
+    storage.updateJob(editingJob.id, {
       title: editFormData.title,
       budget: Number(editFormData.budget),
       description: editFormData.description,
       location: editFormData.location,
     });
-    setJobs(updatedList);
+    setJobs(storage.getJobsForCustomer(user));
     setEditingJob(null);
   };
 
@@ -88,12 +88,12 @@ export const MyJobs = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Top Bar */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#0600AB]/20 rounded-2xl p-6 border border-slate-200/90 dark:border-[#0600AB]/40 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             My Posted Jobs
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Track worker bids, assign tasks, and monitor repair status in real-time.
           </p>
         </div>
@@ -116,7 +116,7 @@ export const MyJobs = () => {
             className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-all ${
               selectedStatus === st
                 ? 'bg-primary-600 text-white shadow-xs'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                : 'bg-white dark:bg-[#0600AB]/20 hover:bg-slate-100 dark:hover:bg-[#0600AB]/40 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#0600AB]/40'
             }`}
           >
             {st}
@@ -130,14 +130,14 @@ export const MyJobs = () => {
           {filteredJobs.map((job) => (
             <div
               key={job.id}
-              className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-primary-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+              className="bg-white dark:bg-[#0600AB]/20 rounded-2xl p-6 border border-slate-200/90 dark:border-[#0600AB]/40 shadow-xs hover:border-primary-300 dark:hover:border-primary-400 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
               <div className="space-y-2 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getStatusBadge(job.status)}`}>
                     {job.status}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                     {job.categoryName || job.category}
                   </span>
                   <span className="text-xs text-slate-400">
@@ -145,17 +145,17 @@ export const MyJobs = () => {
                   </span>
                 </div>
 
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   {job.title}
                 </h3>
 
-                <p className="text-xs text-slate-600 line-clamp-2 max-w-2xl">
+                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 max-w-2xl">
                   {job.description}
                 </p>
 
-                <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap pt-1">
-                  <span className="flex items-center gap-1 font-semibold text-slate-700">
-                    <DollarSign className="w-3.5 h-3.5 text-primary-600" />
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 flex-wrap pt-1">
+                  <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200">
+                    <DollarSign className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
                     ₹{job.budget} ({job.paymentType || 'Fixed'})
                   </span>
                   <span className="flex items-center gap-1">
@@ -166,7 +166,7 @@ export const MyJobs = () => {
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
                     Target: {job.preferredDate}
                   </span>
-                  <span className="flex items-center gap-1 text-primary-600 font-semibold">
+                  <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400 font-semibold">
                     <Users className="w-3.5 h-3.5" />
                     {job.proposals?.length || job.applicationsCount || 0} Worker Bids
                   </span>
@@ -174,24 +174,24 @@ export const MyJobs = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0">
+              <div className="flex items-center gap-2 shrink-0 border-t border-slate-100 dark:border-[#0600AB]/30 md:border-t-0 pt-3 md:pt-0">
                 <button
                   onClick={() => setViewingJob(job)}
-                  className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   <span>View Details</span>
                 </button>
                 <button
                   onClick={() => handleEditClick(job)}
-                  className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   <span>Edit</span>
                 </button>
                 <button
                   onClick={() => handleDeleteJob(job.id)}
-                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors"
+                  className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors"
                   title="Delete job"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -201,12 +201,12 @@ export const MyJobs = () => {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/90 shadow-xs space-y-4">
-          <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+        <div className="bg-white dark:bg-[#0600AB]/20 rounded-3xl p-12 text-center border border-slate-200/90 dark:border-[#0600AB]/40 shadow-xs space-y-4">
+          <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
             <FileText className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800">No jobs found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white">No jobs found</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
             You don't have any jobs matching the selected status. Post your repair job for free now.
           </p>
           <Link
@@ -222,7 +222,7 @@ export const MyJobs = () => {
       {/* View Details Modal */}
       {viewingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+          <div className="w-full max-w-xl bg-white dark:bg-[#00033D] rounded-2xl shadow-xl border border-slate-100 dark:border-[#0600AB]/40 overflow-hidden">
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-primary-400">Job Details</span>
@@ -234,58 +234,58 @@ export const MyJobs = () => {
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs sm:text-sm">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusBadge(viewingJob.status)}`}>
                   {viewingJob.status}
                 </span>
-                <span className="font-bold text-primary-600 text-base">₹{viewingJob.budget} ({viewingJob.paymentType})</span>
+                <span className="font-bold text-primary-600 dark:text-primary-400 text-base">₹{viewingJob.budget} ({viewingJob.paymentType})</span>
               </div>
 
               <div>
-                <h4 className="font-bold text-slate-800 mb-1">Description:</h4>
-                <p className="text-slate-600 whitespace-pre-line leading-relaxed">{viewingJob.description}</p>
+                <h4 className="font-bold text-slate-800 dark:text-white mb-1">Description:</h4>
+                <p className="text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed">{viewingJob.description}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
                 <div>
                   <span className="text-slate-400 block">Category</span>
-                  <span className="font-semibold text-slate-800">{viewingJob.categoryName || viewingJob.category}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingJob.categoryName || viewingJob.category}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Location</span>
-                  <span className="font-semibold text-slate-800">{viewingJob.location}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingJob.location}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Preferred Date</span>
-                  <span className="font-semibold text-slate-800">{viewingJob.preferredDate}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingJob.preferredDate}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block">Experience Required</span>
-                  <span className="font-semibold text-slate-800">{viewingJob.experienceRequired}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingJob.experienceRequired}</span>
                 </div>
               </div>
 
               {/* Proposals Received */}
-              <div className="pt-3 border-t border-slate-100">
-                <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-primary-600" />
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                   Received Proposals ({viewingJob.proposals?.length || 0})
                 </h4>
 
                 {viewingJob.proposals && viewingJob.proposals.length > 0 ? (
                   <div className="space-y-2">
                     {viewingJob.proposals.map((prop, i) => (
-                      <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                      <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-[#0600AB]/30 border border-slate-200 dark:border-[#0600AB]/40 flex items-center justify-between gap-3">
                         <div>
-                          <p className="font-bold text-slate-900">{prop.workerName}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">"{prop.message}"</p>
+                          <p className="font-bold text-slate-900 dark:text-white">{prop.workerName}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">"{prop.message}"</p>
                           <span className="text-[10px] text-slate-400">{prop.date}</span>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className="font-bold text-primary-600 text-sm">₹{prop.bidAmount}</span>
+                          <span className="font-bold text-primary-600 dark:text-primary-400 text-sm">₹{prop.bidAmount}</span>
                           <Link
                             to={`/worker/${prop.workerId}`}
-                            className="block mt-1 text-[11px] font-semibold text-slate-700 hover:text-primary-600"
+                            className="block mt-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400"
                           >
                             View Worker Profile
                           </Link>
@@ -299,10 +299,10 @@ export const MyJobs = () => {
               </div>
             </div>
 
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-right">
+            <div className="px-6 py-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-right">
               <button
                 onClick={() => setViewingJob(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs rounded-xl"
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-semibold text-xs rounded-xl"
               >
                 Close
               </button>
@@ -314,7 +314,7 @@ export const MyJobs = () => {
       {/* Edit Job Modal */}
       {editingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+          <div className="w-full max-w-lg bg-white dark:bg-[#00033D] rounded-2xl shadow-xl border border-slate-100 dark:border-[#0600AB]/40 overflow-hidden">
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
               <h3 className="font-bold text-base">Edit Job Posting</h3>
               <button onClick={() => setEditingJob(null)} className="p-1 rounded-lg hover:bg-slate-800 text-slate-400">
@@ -324,46 +324,46 @@ export const MyJobs = () => {
 
             <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Job Title</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
                 <input
                   type="text"
                   required
                   value={editFormData.title}
                   onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Budget (₹)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Budget (₹)</label>
                 <input
                   type="number"
                   required
                   value={editFormData.budget}
                   onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
-                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Location</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Location</label>
                 <input
                   type="text"
                   required
                   value={editFormData.location}
                   onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
-                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
                   rows="3"
                   required
                   value={editFormData.description}
                   onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full p-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
 
@@ -371,7 +371,7 @@ export const MyJobs = () => {
                 <button
                   type="button"
                   onClick={() => setEditingJob(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200"
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>

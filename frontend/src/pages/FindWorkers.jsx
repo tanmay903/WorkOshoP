@@ -10,49 +10,119 @@ import {
   ShieldCheck,
   RotateCcw,
   Users,
-  CheckCircle2
+  CheckCircle2,
+  Map as MapIcon,
+  Heart,
+  Scale,
+  ArrowRight
 } from 'lucide-react';
 import { categories } from '../data/categories';
+import { ASSAM_DISTRICTS } from '../data/workers';
 import { WorkerCard } from '../components/WorkerCard';
 import { storage } from '../utils/storage';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useCustomerLocation } from '../context/LocationContext';
+import { MapPickerModal } from '../components/MapPickerModal';
+import CompareWorkersModal from '../components/CompareWorkersModal';
+import { BookingModal } from '../components/BookingModal';
 
 export const FindWorkers = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { customerLocation, defaultMapLocation, setSiteLocation, clearSiteLocation } = useCustomerLocation();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [locationQuery, setLocationQuery] = useState(searchParams.get('loc') || '');
+  const [locationQuery, setLocationQuery] = useState(
+    searchParams.get('loc') ||
+      (customerLocation.isSet ? customerLocation.district || customerLocation.label : '')
+  );
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
 
   // Filter state
+  const { user } = useAuth();
   const [minRating, setMinRating] = useState(0);
   const [minExperience, setMinExperience] = useState(0);
   const [maxPrice, setMaxPrice] = useState(500);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState(() => storage.getSavedWorkerIds());
+  const [compareWorkers, setCompareWorkers] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [bookingTargetWorker, setBookingTargetWorker] = useState(null);
 
   // Sorting
   const [sortBy, setSortBy] = useState('rating-desc'); // 'rating-desc' | 'price-asc' | 'price-desc' | 'reviews-desc'
 
   // Mobile filter drawer state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Raw workers from storage
   const [allWorkers, setAllWorkers] = useState([]);
 
   useEffect(() => {
-    setAllWorkers(storage.getWorkers());
-  }, []);
+    let active = true;
+    const localWorkers = storage.getWorkers();
+    setAllWorkers(localWorkers);
 
-  // Update when URL search query changes
+    api.getWorkers({ limit: 100 }).then((res) => {
+      if (!active || !res?.success || !Array.isArray(res.data)) return;
+      const merged = [...res.data];
+      const seen = new Set(merged.map((w) => String(w.email || w.id).toLowerCase()));
+      for (const lw of localWorkers) {
+        const key = String(lw.email || lw.id).toLowerCase();
+        if (!seen.has(key)) {
+          merged.push(lw);
+          seen.add(key);
+        }
+      }
+      setAllWorkers(merged);
+    });
+
+    setSavedIds(storage.getSavedWorkerIds(user?.id));
+    const onSavedChanged = (e) => {
+      setSavedIds(e?.detail?.ids || storage.getSavedWorkerIds(user?.id));
+    };
+    window.addEventListener('hw-saved-workers-changed', onSavedChanged);
+    return () => {
+      active = false;
+      window.removeEventListener('hw-saved-workers-changed', onSavedChanged);
+    };
+  }, [user?.id]);
+
+  const handleToggleCompare = (worker) => {
+    setCompareWorkers((prev) => {
+      const exists = prev.some((w) => w.id === worker.id);
+      if (exists) return prev.filter((w) => w.id !== worker.id);
+      if (prev.length >= 3) {
+        return [...prev.slice(1), worker];
+      }
+      return [...prev, worker];
+    });
+  };
+
+  // Update when URL search query or site-wide customer location changes
   useEffect(() => {
-    const q = searchParams.get('q');
-    const loc = searchParams.get('loc');
-    const cat = searchParams.get('category');
-    if (q !== null) setSearchQuery(q);
-    if (loc !== null) setLocationQuery(loc);
-    if (cat !== null) setSelectedCategory(cat);
-  }, [searchParams]);
+    const q = searchParams.get('q') || '';
+    const urlLoc = searchParams.get('loc');
+    const loc =
+      urlLoc !== null && urlLoc !== ''
+        ? urlLoc
+        : customerLocation.isSet
+          ? customerLocation.district || customerLocation.label || ''
+          : '';
+    const cat = searchParams.get('category') || 'all';
+    setSearchQuery(q);
+    setLocationQuery(loc);
+    setSelectedCategory(cat);
+  }, [
+    searchParams,
+    customerLocation.isSet,
+    customerLocation.district,
+    customerLocation.label,
+  ]);
 
   // Filtering logic
   const filteredWorkers = useMemo(() => {
@@ -60,16 +130,16 @@ export const FindWorkers = () => {
       // Profession or Name search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = w.name.toLowerCase().includes(q);
-        const matchesProf = w.profession.toLowerCase().includes(q);
-        const matchesSkills = w.skills?.some(s => s.toLowerCase().includes(q));
+        const matchesName = (w.name || '').toLowerCase().includes(q);
+        const matchesProf = (w.profession || '').toLowerCase().includes(q);
+        const matchesSkills = w.skills?.some(s => (s || '').toLowerCase().includes(q));
         if (!matchesName && !matchesProf && !matchesSkills) return false;
       }
 
       // Location search
       if (locationQuery.trim()) {
         const loc = locationQuery.toLowerCase();
-        const matchesLoc = w.location?.toLowerCase().includes(loc) || w.city?.toLowerCase().includes(loc);
+        const matchesLoc = (w.location || '').toLowerCase().includes(loc) || (w.city || '').toLowerCase().includes(loc);
         if (!matchesLoc) return false;
       }
 
@@ -93,6 +163,9 @@ export const FindWorkers = () => {
       // Available filter
       if (availableOnly && !w.isAvailable) return false;
 
+      // Saved / Favourite filter
+      if (savedOnly && !savedIds.includes(String(w.id))) return false;
+
       return true;
     }).sort((a, b) => {
       if (sortBy === 'rating-desc') return b.rating - a.rating;
@@ -111,6 +184,8 @@ export const FindWorkers = () => {
     maxPrice,
     verifiedOnly,
     availableOnly,
+    savedOnly,
+    savedIds,
     sortBy
   ]);
 
@@ -118,11 +193,13 @@ export const FindWorkers = () => {
     setSearchQuery('');
     setLocationQuery('');
     setSelectedCategory('all');
+    clearSiteLocation();
     setMinRating(0);
     setMinExperience(0);
     setMaxPrice(500);
     setVerifiedOnly(false);
     setAvailableOnly(false);
+    setSavedOnly(false);
     setSortBy('rating-desc');
     setSearchParams({});
   };
@@ -134,6 +211,7 @@ export const FindWorkers = () => {
     maxPrice < 500,
     verifiedOnly,
     availableOnly,
+    savedOnly,
     searchQuery.trim().length > 0,
     locationQuery.trim().length > 0
   ].filter(Boolean).length;
@@ -141,10 +219,10 @@ export const FindWorkers = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header Bar */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-soft transition-colors">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
               Find Skilled Workers
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -155,9 +233,9 @@ export const FindWorkers = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-2"
+              className="lg:hidden px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#1E293B] text-xs font-semibold rounded-xl flex items-center gap-2"
             >
-              <Filter className="w-4 h-4 text-primary-600" />
+              <Filter className="w-4 h-4 text-[#2563EB]" />
               <span>Filters ({activeFiltersCount})</span>
             </button>
 
@@ -167,7 +245,7 @@ export const FindWorkers = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               >
                 <option value="rating-desc">Highest Rating</option>
                 <option value="reviews-desc">Most Reviews</option>
@@ -195,11 +273,28 @@ export const FindWorkers = () => {
             <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
             <input
               type="text"
-              placeholder="Filter location (Delhi, Mumbai, etc.)..."
+              list="assam-districts"
+              placeholder="Filter Assam district (Guwahati, Dibrugarh...)"
               value={locationQuery}
               onChange={(e) => setLocationQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
+              className="w-full pl-10 pr-16 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
             />
+            <button
+              type="button"
+              onClick={() => setShowMapPicker(true)}
+              className="absolute right-2 top-1.5 px-2 py-1 text-[11px] font-bold text-primary-600 hover:bg-primary-50 rounded-lg inline-flex items-center gap-1 transition-colors"
+              title="Set location using map"
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              <span>Map</span>
+            </button>
+            <datalist id="assam-districts">
+              {ASSAM_DISTRICTS.map((d) => (
+                <option key={d.district} value={d.district}>
+                  {d.town !== d.district ? `${d.town} (${d.district})` : d.district}
+                </option>
+              ))}
+            </datalist>
           </div>
 
           <div className="flex items-center gap-2">
@@ -269,9 +364,29 @@ export const FindWorkers = () => {
                 className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300"
               />
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
                 Available Today
               </span>
+            </label>
+
+            <label className="flex items-center justify-between gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 pt-1">
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={savedOnly}
+                  onChange={(e) => setSavedOnly(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300"
+                />
+                <span className="flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                  Saved Favourites
+                </span>
+              </span>
+              {savedIds.length > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">
+                  {savedIds.length}
+                </span>
+              )}
             </label>
           </div>
 
@@ -373,7 +488,12 @@ export const FindWorkers = () => {
           {filteredWorkers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {filteredWorkers.map((worker) => (
-                <WorkerCard key={worker.id} worker={worker} />
+                <WorkerCard
+                  key={worker.id}
+                  worker={worker}
+                  isCompared={compareWorkers.some((w) => w.id === worker.id)}
+                  onToggleCompare={handleToggleCompare}
+                />
               ))}
             </div>
           ) : (
@@ -430,6 +550,15 @@ export const FindWorkers = () => {
                 />
                 <span>Available Today</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={savedOnly}
+                  onChange={(e) => setSavedOnly(e.target.checked)}
+                  className="w-4 h-4 rounded text-rose-600"
+                />
+                <span>Saved Favourites ({savedIds.length})</span>
+              </label>
             </div>
 
             {/* Price slider */}
@@ -465,6 +594,86 @@ export const FindWorkers = () => {
             </div>
           </div>
         </div>
+      )}
+
+      <MapPickerModal
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        initialValue={
+          locationQuery ||
+          (customerLocation.isSet ? customerLocation.label : defaultMapLocation.label)
+        }
+        initialCoords={
+          customerLocation.isSet
+            ? { lat: customerLocation.lat, lng: customerLocation.lng }
+            : !locationQuery
+              ? { lat: defaultMapLocation.lat, lng: defaultMapLocation.lng }
+              : undefined
+        }
+        title="Pick District or Location on Map"
+        onSelectLocation={(loc, nearest, exactCoords) => {
+          const nextVal = nearest?.district || loc;
+          setLocationQuery(nextVal);
+          setSiteLocation({
+            label: loc || nextVal,
+            district: nearest?.district || '',
+            lat: exactCoords?.lat ?? nearest?.lat,
+            lng: exactCoords?.lng ?? nearest?.lng,
+          });
+        }}
+      />
+
+      {/* Sticky Compare Bar */}
+      {compareWorkers.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-2xl bg-[#0F172A] text-white rounded-2xl shadow-2xl border border-slate-700 px-4 py-3 flex items-center justify-between gap-3 animate-scale-in">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center shrink-0">
+              <Scale className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-bold truncate">
+                Compare Workers ({compareWorkers.length}/3)
+              </p>
+              <p className="text-[11px] text-slate-300 truncate">
+                {compareWorkers.map((w) => w.name).join(' • ')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setCompareWorkers([])}
+              className="px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              disabled={compareWorkers.length < 2}
+              onClick={() => setShowCompareModal(true)}
+              className="px-3.5 py-2 bg-[#14B8A6] hover:bg-[#0D9488] disabled:opacity-50 disabled:cursor-not-allowed text-[#0F172A] font-extrabold text-xs rounded-xl inline-flex items-center gap-1 transition-all"
+            >
+              <span>Compare</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <CompareWorkersModal
+        isOpen={showCompareModal}
+        onClose={() => setShowCompareModal(false)}
+        workers={compareWorkers}
+        onRemoveWorker={(wid) => setCompareWorkers((prev) => prev.filter((w) => w.id !== wid))}
+        onBookWorker={(worker) => setBookingTargetWorker(worker)}
+      />
+
+      {bookingTargetWorker && (
+        <BookingModal
+          worker={bookingTargetWorker}
+          isOpen={Boolean(bookingTargetWorker)}
+          onClose={() => setBookingTargetWorker(null)}
+        />
       )}
     </div>
   );

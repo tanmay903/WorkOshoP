@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { Avatar } from '../components/Avatar';
 
 export const Messages = () => {
   const [searchParams] = useSearchParams();
@@ -24,10 +25,19 @@ export const Messages = () => {
   const [inputText, setInputText] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
 
-  const chatEndRef = useRef(null);
+  const messagesFeedRef = useRef(null);
+
+  // Guarantee the page starts at the top when navigating to messages
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  }, []);
 
   useEffect(() => {
-    const convs = storage.getConversations();
+    const convs = storage.getConversationsForUser(user);
     setConversations(convs);
 
     const queryConvId = searchParams.get('conv');
@@ -35,11 +45,16 @@ export const Messages = () => {
       setActiveConvId(queryConvId);
     } else if (convs.length > 0) {
       setActiveConvId(convs[0].id);
+    } else {
+      setActiveConvId(null);
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
+  // Scroll ONLY the inner messages feed container, never the browser window
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesFeedRef.current) {
+      messagesFeedRef.current.scrollTop = messagesFeedRef.current.scrollHeight;
+    }
   }, [activeConvId, conversations]);
 
   const activeConv = conversations.find(c => c.id === activeConvId);
@@ -49,8 +64,8 @@ export const Messages = () => {
     if (!inputText.trim() || !activeConvId) return;
 
     const senderRole = isWorker ? 'worker' : 'customer';
-    const { updated } = storage.sendMessage(activeConvId, inputText.trim(), senderRole);
-    setConversations(updated);
+    storage.sendMessage(activeConvId, inputText.trim(), senderRole);
+    setConversations(storage.getConversationsForUser(user));
     setInputText('');
 
     // Optional simulated quick auto-reply after 1.5s if talking to worker
@@ -63,27 +78,27 @@ export const Messages = () => {
           'Thank you for confirming, see you soon!'
         ];
         const randomReply = workerResponses[Math.floor(Math.random() * workerResponses.length)];
-        const { updated: finalUpdated } = storage.sendMessage(activeConvId, randomReply, 'worker');
-        setConversations(finalUpdated);
+        storage.sendMessage(activeConvId, randomReply, 'worker');
+        setConversations(storage.getConversationsForUser(user));
       }, 1500);
     }
   };
 
   const filteredConversations = conversations.filter(c => {
-    const partnerName = isWorker ? c.customerName : c.workerName;
+    const partnerName = (isWorker ? c.customerName : c.workerName) || '';
     return partnerName.toLowerCase().includes(searchFilter.toLowerCase());
   });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-soft overflow-hidden h-[82vh] flex flex-col md:flex-row">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-soft overflow-hidden h-[82vh] flex flex-col md:flex-row transition-colors">
         {/* ========================================================
             Conversation List (Left panel)
            ======================================================== */}
-        <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 flex flex-col h-full bg-slate-50/50">
+        <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full bg-[#F8FAFC] dark:bg-slate-900/80">
           {/* Header */}
-          <div className="p-4 border-b border-slate-200/80 bg-white">
-            <h2 className="text-lg font-bold text-slate-900">Direct Messages</h2>
+          <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">Direct Messages</h2>
             <div className="relative mt-2">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
               <input
@@ -91,19 +106,16 @@ export const Messages = () => {
                 placeholder="Search conversations..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 text-[#1E293B] dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
               />
             </div>
           </div>
 
           {/* List items */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
             {filteredConversations.length > 0 ? (
               filteredConversations.map((c) => {
                 const partnerName = isWorker ? c.customerName : c.workerName;
-                const partnerAvatar = isWorker
-                  ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'
-                  : c.workerAvatar;
                 const lastMsg = c.messages?.[c.messages.length - 1];
                 const isSelected = c.id === activeConvId;
 
@@ -111,22 +123,23 @@ export const Messages = () => {
                   <button
                     key={c.id}
                     onClick={() => setActiveConvId(c.id)}
-                    className={`w-full p-4 text-left flex items-start gap-3 transition-colors ${
-                      isSelected ? 'bg-primary-50/80 border-l-4 border-primary-600' : 'hover:bg-white'
-                    }`}
+                    className={`w-full p-4 text-left flex items-start gap-3 transition-colors ${isSelected
+                        ? 'bg-blue-50/90 dark:bg-slate-800 border-l-4 border-[#2563EB]'
+                        : 'hover:bg-white dark:hover:bg-slate-800/60'
+                      }`}
                   >
                     <div className="relative shrink-0">
-                      <img
-                        src={partnerAvatar}
-                        alt={partnerName}
-                        className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-200"
+                      <Avatar
+                        name={partnerName}
+                        src={isWorker ? '' : c.workerAvatar}
+                        className="w-11 h-11 rounded-2xl text-sm ring-1 ring-slate-200 dark:ring-slate-700"
                       />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#16A34A] border-2 border-white dark:border-slate-900 rounded-full" />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
                           {partnerName}
                         </h4>
                         <span className="text-[10px] text-slate-400">
@@ -134,11 +147,11 @@ export const Messages = () => {
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-primary-600 font-medium">
+                      <p className="text-[11px] text-primary-600 dark:text-primary-400 font-medium">
                         {isWorker ? 'Customer' : c.workerProfession}
                       </p>
 
-                      <p className="text-xs text-slate-500 truncate mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-300 truncate mt-1">
                         {lastMsg ? lastMsg.text : 'Start conversation...'}
                       </p>
                     </div>
@@ -163,24 +176,24 @@ export const Messages = () => {
             Active Chat Window (Right panel)
            ======================================================== */}
         {activeConv ? (
-          <div className="flex-1 flex flex-col h-full bg-white">
+          <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900">
             {/* Chat Header */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white z-10">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 z-10">
               <div className="flex items-center gap-3">
-                <img
-                  src={isWorker ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80' : activeConv.workerAvatar}
-                  alt={isWorker ? activeConv.customerName : activeConv.workerName}
-                  className="w-10 h-10 rounded-2xl object-cover ring-1 ring-slate-200"
+                <Avatar
+                  name={isWorker ? activeConv.customerName : activeConv.workerName}
+                  src={isWorker ? '' : activeConv.workerAvatar}
+                  className="w-10 h-10 rounded-2xl text-xs ring-1 ring-slate-200 dark:ring-slate-700 shrink-0"
                 />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                  <h3 className="font-bold text-sm text-[#0F172A] dark:text-white flex items-center gap-1.5">
                     {isWorker ? activeConv.customerName : activeConv.workerName}
                     {!isWorker && (
-                      <ShieldCheck className="w-4 h-4 fill-emerald-600 text-white" />
+                      <ShieldCheck className="w-4 h-4 fill-[#14B8A6] text-white" />
                     )}
                   </h3>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
                     Online &bull; {isWorker ? 'Customer' : activeConv.workerProfession}
                   </p>
                 </div>
@@ -189,7 +202,7 @@ export const Messages = () => {
               {!isWorker && (
                 <Link
                   to={`/worker/${activeConv.workerId}`}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#1E293B] dark:text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1 transition-colors"
                 >
                   <span>Profile</span>
                   <ExternalLink className="w-3 h-3" />
@@ -198,9 +211,9 @@ export const Messages = () => {
             </div>
 
             {/* Message Feed */}
-            <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 bg-slate-50/40">
+            <div ref={messagesFeedRef} className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-3 bg-[#F8FAFC] dark:bg-slate-950">
               <div className="text-center my-2">
-                <span className="text-[10px] uppercase font-bold text-slate-400 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1 rounded-full shadow-2xs">
                   End-to-End Encrypted Customer Support
                 </span>
               </div>
@@ -214,32 +227,30 @@ export const Messages = () => {
                     className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                   >
                     <div
-                      className={`max-w-[78%] sm:max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                        isMe
-                          ? 'bg-primary-600 text-white rounded-br-xs shadow-xs'
-                          : 'bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs shadow-2xs'
-                      }`}
+                      className={`max-w-[78%] sm:max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${isMe
+                          ? 'bg-[#2563EB] text-white rounded-br-xs shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-[#1E293B] dark:text-white border border-slate-200 dark:border-slate-700 rounded-bl-xs shadow-2xs'
+                        }`}
                     >
                       {msg.text}
                     </div>
                     <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-1 px-1">
                       <span>{msg.time}</span>
-                      {isMe && <CheckCheck className="w-3 h-3 text-primary-500" />}
+                      {isMe && <CheckCheck className="w-3 h-3 text-[#2563EB]" />}
                     </div>
                   </div>
                 );
               })}
-              <div ref={chatEndRef} />
             </div>
 
             {/* Input Bar */}
-            <form onSubmit={handleSendMessage} className="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
               <input
                 type="text"
                 placeholder="Type your message here..."
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
+                className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
               />
               <button
                 type="submit"
@@ -251,8 +262,27 @@ export const Messages = () => {
             </form>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8 text-center text-slate-400 text-xs">
-            Select a conversation on the left to begin chatting.
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+            {conversations.length === 0 ? (
+              <>
+                <p className="text-sm font-semibold text-[#0F172A] dark:text-white mb-1">No active conversations yet</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-4">
+                  {isWorker
+                    ? 'Conversations appear here once a customer messages or hires you.'
+                    : 'Messages will appear here after you contact or hire a worker.'}
+                </p>
+                {!isWorker && (
+                  <Link
+                    to="/find-workers"
+                    className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-xl transition-colors"
+                  >
+                    Browse Workers
+                  </Link>
+                )}
+              </>
+            ) : (
+              <p className="text-xs">Select a conversation on the left to begin chatting.</p>
+            )}
           </div>
         )}
       </div>

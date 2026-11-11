@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -13,25 +13,88 @@ import {
   Briefcase,
   TrendingUp,
   Award,
-  Sparkles
+  Sparkles,
+  Map as MapIcon
 } from 'lucide-react';
 import { categories } from '../data/categories';
 import { CategoryCard } from '../components/CategoryCard';
 import { WorkerCard } from '../components/WorkerCard';
 import { storage } from '../utils/storage';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useCustomerLocation } from '../context/LocationContext';
+import { ASSAM_DISTRICTS } from '../data/workers';
+import { MapPickerModal } from '../components/MapPickerModal';
 
 export const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { customerLocation, defaultMapLocation, setSiteLocation } = useCustomerLocation();
   const [professionQuery, setProfessionQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('');
-  const [featuredWorkers, setFeaturedWorkers] = useState([]);
+  const [locationQuery, setLocationQuery] = useState(
+    customerLocation.isSet ? (customerLocation.district || customerLocation.label) : ''
+  );
+  const [allWorkersPool, setAllWorkersPool] = useState([]);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   useEffect(() => {
-    const workers = storage.getWorkers();
-    // Pick top verified workers with rating >= 4.7
-    const top = workers.filter(w => w.verified).slice(0, 6);
-    setFeaturedWorkers(top.length > 0 ? top : workers.slice(0, 6));
+    if (customerLocation.isSet) {
+      setLocationQuery(customerLocation.district || customerLocation.label || '');
+    } else {
+      setLocationQuery('');
+    }
+  }, [customerLocation.isSet, customerLocation.district, customerLocation.label]);
+
+  useEffect(() => {
+    let active = true;
+    const localWorkers = storage.getWorkers();
+    setAllWorkersPool(localWorkers);
+
+    api.getWorkers({ limit: 24 }).then((res) => {
+      if (!active || !res?.success || !Array.isArray(res.data)) return;
+      const merged = [...res.data];
+      const seen = new Set(merged.map((w) => String(w.email || w.id).toLowerCase()));
+      for (const lw of localWorkers) {
+        const key = String(lw.email || lw.id).toLowerCase();
+        if (!seen.has(key)) {
+          merged.push(lw);
+          seen.add(key);
+        }
+      }
+      setAllWorkersPool(merged);
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
+
+  const featuredWorkers = useMemo(() => {
+    const filterKey = String(
+      customerLocation.isSet ? (customerLocation.district || customerLocation.label) : ''
+    )
+      .trim()
+      .toLowerCase();
+
+    const sorted = [...allWorkersPool].sort((a, b) => {
+      if (filterKey) {
+        const aMatch =
+          String(a.district || '').toLowerCase().includes(filterKey) ||
+          String(a.location || '').toLowerCase().includes(filterKey)
+            ? 0
+            : 1;
+        const bMatch =
+          String(b.district || '').toLowerCase().includes(filterKey) ||
+          String(b.location || '').toLowerCase().includes(filterKey)
+            ? 0
+            : 1;
+        if (aMatch !== bMatch) return aMatch - bMatch;
+      }
+      return (b.verified ? 1 : 0) - (a.verified ? 1 : 0);
+    });
+
+    return sorted.slice(0, 6);
+  }, [allWorkersPool, customerLocation.isSet, customerLocation.district, customerLocation.label]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -44,25 +107,26 @@ export const Home = () => {
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-10 sm:pt-16 pb-12 sm:pb-20 bg-gradient-to-b from-primary-50/60 via-surface to-surface">
-        {/* Decorative background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-tr from-primary-200/40 via-blue-100/30 to-transparent blur-3xl -z-10 pointer-events-none" />
+      <section className="relative overflow-hidden pt-10 sm:pt-16 pb-12 sm:pb-20 bg-gradient-to-b from-blue-50/70 via-[#F8FAFC] to-[#F8FAFC]">
+        {/* Floating decorative ambient glow orbs */}
+        <div className="absolute top-6 left-12 w-72 h-72 bg-gradient-to-tr from-[#14B8A6]/15 to-[#2563EB]/15 rounded-full blur-3xl -z-10 pointer-events-none animate-float-slow" />
+        <div className="absolute top-16 right-12 w-80 h-80 bg-gradient-to-bl from-[#2563EB]/15 to-[#14B8A6]/15 rounded-full blur-3xl -z-10 pointer-events-none animate-float-reverse" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade-in-up">
           {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-primary-200 dark:border-primary-900 shadow-xs mb-6 animate-fadeIn">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-slate-700 shadow-xs mb-6 shimmer-badge hover:scale-105 transition-transform duration-300 cursor-default">
+            <span className="flex h-2 w-2 rounded-full bg-[#16A34A] animate-ping" />
+            <span className="text-xs font-semibold text-[#1E293B] dark:text-slate-200">
               India's Most Trusted Skilled Worker Marketplace
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span className="text-xs font-bold text-primary-600 dark:text-primary-400">10,000+ Pros</span>
+            <span className="text-xs font-bold text-[#2563EB] dark:text-blue-400">10,000+ Pros</span>
           </div>
 
           {/* Headings */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-navy-900 dark:text-white tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#0F172A] dark:text-white tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
             Find Skilled Workers <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-[#977DFF] via-[#0033FF] to-[#0600AB] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#2563EB] via-[#1D4ED8] to-[#14B8A6] bg-clip-text text-transparent">
               For Every Need
             </span>
           </h1>
@@ -97,11 +161,26 @@ export const Home = () => {
                 <MapPin className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Location (e.g. Delhi, Mumbai...)"
+                  list="home-assam-districts"
+                  placeholder="Assam district (e.g. Guwahati, Dibrugarh...)"
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
-                  className="w-full pl-11 pr-3 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 dark:focus:bg-slate-800/80 transition-colors"
+                  className="w-full pl-11 pr-16 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl sm:rounded-2xl bg-transparent focus:outline-none focus:bg-slate-50/80 dark:focus:bg-slate-800/80 transition-colors"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(true)}
+                  className="absolute right-2 top-2 px-2.5 py-1.5 text-xs font-bold text-primary-600 hover:bg-primary-50 rounded-lg inline-flex items-center gap-1 transition-colors"
+                  title="Pick location on map"
+                >
+                  <MapIcon className="w-3.5 h-3.5" />
+                  <span>Map</span>
+                </button>
+                <datalist id="home-assam-districts">
+                  {ASSAM_DISTRICTS.map((d) => (
+                    <option key={d.district} value={d.district} />
+                  ))}
+                </datalist>
               </div>
 
               {/* Buttons */}
@@ -203,7 +282,7 @@ export const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
             <span className="text-xs font-bold uppercase tracking-widest text-primary-400 bg-primary-950/80 px-3 py-1 rounded-full border border-primary-500/30">
-              Why Choose HireWorker
+              Why Choose WorkOshop
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold mt-4 tracking-tight">
               Safety, Transparency & Guaranteed Workmanship
@@ -305,17 +384,36 @@ export const Home = () => {
             to="/find-workers"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
           >
-            <span>Explore All 12+ Workers</span>
+            <span>Explore Registered Workers</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
         {/* Worker Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredWorkers.map((worker) => (
-            <WorkerCard key={worker.id} worker={worker} />
-          ))}
-        </div>
+        {featuredWorkers.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredWorkers.map((worker) => (
+              <WorkerCard key={worker.id} worker={worker} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+            <Users className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              No registered workers yet
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              Real skilled professionals who sign up and create their profile will appear here automatically.
+            </p>
+            <Link
+              to="/register-worker"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-colors"
+            >
+              <span>Register as a Worker</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* How It Works Section */}
@@ -325,7 +423,7 @@ export const Home = () => {
             Simple 3-Step Process
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-3">
-            How HireWorker Works
+            How WorkOshop Works
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
             Hiring a skilled technician has never been smoother
@@ -369,29 +467,29 @@ export const Home = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* For Customers */}
-          <div className="bg-gradient-to-br from-[#977DFF] via-[#0033FF] to-[#0600AB] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl shadow-[#0033FF]/25">
+          <div className="bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#0F172A] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl shadow-[#2563EB]/20 card-lift group">
             <div>
-              <span className="text-xs uppercase tracking-wider font-bold bg-white/20 px-3 py-1 rounded-full">
+              <span className="text-xs uppercase tracking-wider font-bold bg-white/20 px-3 py-1 rounded-full shimmer-badge">
                 For Homeowners & Businesses
               </span>
               <h3 className="text-2xl sm:text-3xl font-extrabold mt-4">
                 Need urgent repair work done today?
               </h3>
-              <p className="text-primary-100 text-sm mt-3 leading-relaxed">
+              <p className="text-blue-100 text-sm mt-3 leading-relaxed">
                 Post your job in under 2 minutes and receive competitive quotes from top rated local pros in your area.
               </p>
             </div>
             <div className="mt-8 flex items-center gap-3">
               <Link
                 to="/post-job"
-                className="px-6 py-3 bg-white text-[#0033FF] hover:bg-primary-50 font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                className="px-6 py-3 bg-white text-[#2563EB] hover:bg-blue-50 font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 group/btn"
               >
                 <span>Post a Job Free</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
               <Link
                 to="/find-workers"
-                className="px-5 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl transition-all"
+                className="px-5 py-3 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl transition-all hover:scale-105 active:scale-95"
               >
                 Browse Workers
               </Link>
@@ -399,29 +497,38 @@ export const Home = () => {
           </div>
 
           {/* For Workers */}
-          <div className="bg-gradient-to-br from-[#0033FF] via-[#0600AB] to-[#00033D] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl border border-[#0600AB]/40">
+          <div className="bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0D9488] rounded-3xl p-8 sm:p-10 text-white flex flex-col justify-between shadow-xl border border-slate-700/60 card-lift group">
             <div>
-              <span className="text-xs uppercase tracking-wider font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full">
+              <span className="text-xs uppercase tracking-wider font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full shimmer-badge">
                 For Skilled Tradespeople
               </span>
               <h3 className="text-2xl sm:text-3xl font-extrabold mt-4">
                 Are you an electrician, plumber or mechanic?
               </h3>
               <p className="text-slate-300 text-sm mt-3 leading-relaxed">
-                Join HireWorker to get high-paying daily customer bookings with zero commission on your first 10 jobs.
+                Join WorkOshop to get high-paying daily customer bookings with zero commission on your first 10 jobs.
               </p>
             </div>
             <div className="mt-8 flex items-center gap-3">
               <Link
                 to="/register-worker"
-                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-500/25 flex items-center gap-2"
+                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-emerald-500/25 flex items-center gap-2 group/btn"
               >
                 <span>Join as a Worker</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </Link>
               <Link
-                to="/worker-dashboard"
-                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition-all"
+                to={user?.role === 'worker' ? '/worker-dashboard' : '/login?role=worker'}
+                state={
+                  user?.role === 'worker'
+                    ? undefined
+                    : {
+                        from: '/worker-dashboard',
+                        requiredRole: 'worker',
+                        message: 'Please log in with a Worker account first to open the Worker Portal.',
+                      }
+                }
+                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition-all hover:scale-105 active:scale-95"
               >
                 Worker Portal
               </Link>
@@ -429,6 +536,33 @@ export const Home = () => {
           </div>
         </div>
       </section>
+
+      <MapPickerModal
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        initialValue={
+          locationQuery ||
+          (customerLocation.isSet ? customerLocation.label : defaultMapLocation.label)
+        }
+        initialCoords={
+          customerLocation.isSet
+            ? { lat: customerLocation.lat, lng: customerLocation.lng }
+            : !locationQuery
+              ? { lat: defaultMapLocation.lat, lng: defaultMapLocation.lng }
+              : undefined
+        }
+        title="Select Your Location on Map"
+        onSelectLocation={(loc, nearest, exactCoords) => {
+          const nextVal = nearest?.district || loc;
+          setLocationQuery(nextVal);
+          setSiteLocation({
+            label: loc || nextVal,
+            district: nearest?.district || '',
+            lat: exactCoords?.lat ?? nearest?.lat,
+            lng: exactCoords?.lng ?? nearest?.lng,
+          });
+        }}
+      />
     </div>
   );
 };

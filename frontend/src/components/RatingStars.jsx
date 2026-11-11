@@ -25,18 +25,18 @@ export const RatingStars = ({ rating = 0, count, showCount = true, size = 'sm', 
             >
               <Star
                 className={`${sizeClasses[size] || 'w-4 h-4'} ${
-                  filled ? 'fill-amber-400 text-amber-400' : 'text-slate-200 fill-slate-100'
+                  filled ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-slate-700 fill-slate-100 dark:fill-slate-800'
                 }`}
               />
             </button>
           );
         })}
       </div>
-      <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+      <span className="font-semibold text-slate-800 dark:text-white text-xs sm:text-sm">
         {Number(rating).toFixed(1)}
       </span>
       {showCount && count !== undefined && (
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
           ({count})
         </span>
       )}

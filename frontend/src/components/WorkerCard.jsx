@@ -1,15 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, MapPin, MessageSquare, Briefcase, Clock, Calendar, CheckCircle, ArrowRight } from 'lucide-react';
+import {
+  ShieldCheck, MapPin, MessageSquare, Briefcase,
+  ArrowRight, Heart, Scale, Check
+} from 'lucide-react';
 import { RatingStars } from './RatingStars';
 import { BookingModal } from './BookingModal';
 import { storage } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { Avatar } from './Avatar';
 
-export const WorkerCard = ({ worker, compact = false }) => {
+export const WorkerCard = ({
+  worker,
+  compact = false,
+  isCompared = false,
+  onToggleCompare = null,
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showBooking, setShowBooking] = useState(false);
+  const [isSaved, setIsSaved] = useState(() => storage.isWorkerSaved(worker?.id, user?.id));
+
+  useEffect(() => {
+    setIsSaved(storage.isWorkerSaved(worker?.id, user?.id));
+    const handleSync = (e) => {
+      const ids = e?.detail?.ids;
+      if (Array.isArray(ids)) {
+        setIsSaved(ids.includes(String(worker?.id)));
+      } else {
+        setIsSaved(storage.isWorkerSaved(worker?.id, user?.id));
+      }
+    };
+    window.addEventListener('hw-saved-workers-changed', handleSync);
+    return () => window.removeEventListener('hw-saved-workers-changed', handleSync);
+  }, [worker?.id, user?.id]);
+
+  const handleToggleSave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const res = storage.toggleSavedWorker(worker, user);
+    setIsSaved(res.saved);
+  };
 
   const handleStartChat = (e) => {
     e.preventDefault();
@@ -44,51 +75,111 @@ export const WorkerCard = ({ worker, compact = false }) => {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-soft-lg transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-[#2563EB]/60 dark:hover:border-[#2563EB] card-lift flex flex-col justify-between overflow-hidden group shadow-soft relative">
+        {/* Top-Right Save & Compare Quick Actions */}
+        <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5">
+          {onToggleCompare && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleCompare(worker);
+              }}
+              title={isCompared ? 'Remove from comparison' : 'Compare worker'}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                isCompared
+                  ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                  : 'bg-white/95 text-slate-600 border-slate-200 hover:border-[#2563EB] hover:text-[#2563EB]'
+              }`}
+            >
+              {isCompared ? <Check className="w-3 h-3 text-[#14B8A6]" /> : <Scale className="w-3 h-3" />}
+              <span className="hidden sm:inline">{isCompared ? 'Added' : 'Compare'}</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            title={isSaved ? 'Remove from saved workers' : 'Save worker'}
+            aria-label={isSaved ? 'Remove from saved workers' : 'Save worker'}
+            className={`p-1.5 rounded-lg border transition-all active:scale-90 ${
+              isSaved
+                ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-xs'
+                : 'bg-white/95 text-slate-400 border-slate-200 hover:text-rose-500 hover:border-rose-200'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
+          </button>
+        </div>
+
         <div>
           {/* Card Header & Avatar */}
           <div className="p-5 pb-3">
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3.5">
               <div className="relative shrink-0">
-                <img
+                <Avatar
+                  name={worker.name}
                   src={worker.avatar}
-                  alt={worker.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-slate-100 dark:ring-slate-800 group-hover:scale-105 transition-transform duration-300"
+                  className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl text-xl sm:text-2xl ring-2 ring-slate-100 dark:ring-slate-800 group-hover:scale-105 transition-transform duration-300"
                 />
                 {worker.isAvailable && (
-                  <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full title='Available Now'" />
+                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4" title="Online & Available">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-60" />
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-[#16A34A] border-2 border-white dark:border-slate-900" />
+                  </span>
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-14 sm:pr-20">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <Link
                     to={`/worker/${worker.id}`}
-                    className="font-bold text-slate-900 dark:text-white text-base sm:text-lg hover:text-primary-600 dark:hover:text-primary-400 transition-colors truncate"
+                    className="font-bold text-[#1E293B] dark:text-white text-base sm:text-[17px] hover:text-[#2563EB] dark:hover:text-blue-400 transition-colors truncate"
                   >
                     {worker.name}
                   </Link>
                   {worker.verified && (
-                    <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800" title="Verified Worker">
-                      <ShieldCheck className="w-3.5 h-3.5 fill-emerald-600 text-white" />
+                    <span className="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-[#0D9488] dark:text-teal-300 border border-teal-200 dark:border-teal-800" title="Verified Worker">
+                      <ShieldCheck className="w-3.5 h-3.5 fill-[#14B8A6] text-white" />
                       Verified
                     </span>
                   )}
                 </div>
 
-                <p className="text-primary-600 dark:text-primary-400 font-medium text-xs sm:text-sm mt-0.5">
+                <p className="text-[#2563EB] dark:text-blue-400 font-semibold text-xs sm:text-sm mt-0.5">
                   {worker.profession}
                 </p>
 
-                <div className="mt-2 flex items-center justify-between">
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
                   <RatingStars rating={worker.rating} count={worker.reviewsCount} size="xs" />
-                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {worker.distance || worker.city}
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                    worker.isAvailable
+                      ? 'bg-green-50 text-[#16A34A] border border-green-200/80'
+                      : 'bg-slate-100 text-slate-500 border border-slate-200'
+                  }`}>
+                    {worker.isAvailable ? 'Online' : 'Offline'}
                   </span>
+                  {worker.distance && (
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
+                      {worker.distance}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Worker Address */}
+            {(worker.location || worker.city) && (
+              <div
+                className="mt-3 flex items-start gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300"
+                title={worker.location || worker.city}
+              >
+                <MapPin className="w-3.5 h-3.5 text-primary-500 shrink-0 mt-0.5" />
+                <span className="font-medium leading-snug line-clamp-1">
+                  {worker.location || worker.city}
+                </span>
+              </div>
+            )}
 
             {/* Tagline / Brief Bio */}
             {!compact && (

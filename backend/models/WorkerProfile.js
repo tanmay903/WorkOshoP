@@ -48,11 +48,44 @@ const workerProfileSchema = new mongoose.Schema(
     },
     city: {
       type: String,
-      default: 'New Delhi',
+      default: 'Guwahati',
+    },
+    // Private permanent residential address — stored separately from live tracking
+    // and never exposed in public worker listings or Nearby Workers map endpoints.
+    permanentAddress: {
+      address: { type: String, trim: true, default: '' },
+      state: { type: String, trim: true, default: 'Assam' },
+      country: { type: String, trim: true, default: 'India' },
+      coordinates: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null },
+      },
     },
     coordinates: {
-      lat: { type: Number, default: 28.6139 },
-      lng: { type: Number, default: 77.2090 },
+      lat: { type: Number, default: 26.1445 },
+      lng: { type: Number, default: 91.7362 },
+    },
+    geoLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+      },
+      coordinates: {
+        type: [Number],
+        default: undefined,
+      },
+    },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    locationSharingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    lastLocationUpdatedAt: {
+      type: Date,
+      default: null,
     },
     languages: {
       type: [String],
@@ -138,6 +171,24 @@ const workerProfileSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+workerProfileSchema.index({ geoLocation: '2dsphere' }, { sparse: true });
+
+workerProfileSchema.pre('save', function (next) {
+  if (
+    this.coordinates &&
+    Number.isFinite(this.coordinates.lat) &&
+    Number.isFinite(this.coordinates.lng)
+  ) {
+    this.geoLocation = {
+      type: 'Point',
+      coordinates: [Number(this.coordinates.lng), Number(this.coordinates.lat)],
+    };
+  } else {
+    this.geoLocation = undefined;
+  }
+  next();
+});
 
 // Virtual for reviews on this worker
 workerProfileSchema.virtual('reviews', {

@@ -7,13 +7,13 @@ export const CategoryCard = ({ category }) => {
   return (
     <Link
       to={`/find-workers?category=${category.id}`}
-      className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-soft-lg transition-all duration-300 flex flex-col justify-between overflow-hidden"
+      className="group relative bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 card-lift flex flex-col justify-between overflow-hidden"
     >
       <div className="flex items-start justify-between">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${category.bgLight} group-hover:scale-110 transition-transform duration-300`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${category.bgLight} group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 shadow-xs`}>
           <CategoryIcon name={category.icon} className="w-6 h-6" />
         </div>
-        <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary-50 dark:group-hover:bg-primary-950/60 text-slate-400 group-hover:text-primary-600 flex items-center justify-center transition-colors">
+        <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary-50 dark:group-hover:bg-primary-950/60 text-slate-400 group-hover:text-primary-600 flex items-center justify-center transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
           <ArrowUpRight className="w-4 h-4" />
         </div>
       </div>

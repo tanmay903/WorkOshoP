@@ -26,6 +26,7 @@ export const api = {
       const search = new URLSearchParams(params).toString();
       const res = await fetch(`${API_BASE}/workers${search ? `?${search}` : ''}`, {
         headers: getHeaders(false),
+        cache: 'no-store',
       });
       if (!res.ok) throw new Error('Network error');
       return await res.json();
@@ -35,10 +36,113 @@ export const api = {
     }
   },
 
+  async getNearbyWorkers({ lat, lng, radius = 10, profession = 'all' } = {}) {
+    try {
+      const search = new URLSearchParams();
+      if (lat !== undefined && lng !== undefined) {
+        search.set('lat', String(lat));
+        search.set('lng', String(lng));
+      }
+      if (radius !== undefined) {
+        search.set('radius', String(radius));
+      }
+      if (profession && profession !== 'all') {
+        search.set('profession', profession);
+      }
+
+      const res = await fetch(`${API_BASE}/workers/nearby?${search.toString()}`, {
+        headers: getHeaders(false),
+        cache: 'no-store',
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          message: json?.message || 'Unable to load nearby workers from server.',
+          data: [],
+        };
+      }
+      return json;
+    } catch (err) {
+      return {
+        success: false,
+        offline: true,
+        message: 'Could not reach the backend/MongoDB server to fetch real nearby workers.',
+        data: [],
+      };
+    }
+  },
+
+  async updateWorkerLocation(payload) {
+    try {
+      const res = await fetch(`${API_BASE}/workers/location`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    } catch {
+      return { success: false, offline: true };
+    }
+  },
+
+  async updateWorkerAvailability(payload) {
+    try {
+      const res = await fetch(`${API_BASE}/workers/availability`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    } catch {
+      return { success: false, offline: true };
+    }
+  },
+
+  async getMyWorkerProfile() {
+    try {
+      const res = await fetch(`${API_BASE}/workers/me/profile`, {
+        headers: getHeaders(false),
+        cache: 'no-store',
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  async updateMyWorkerProfile(payload) {
+    try {
+      const res = await fetch(`${API_BASE}/workers/profile`, {
+        method: 'POST',
+        headers: getHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    } catch {
+      return { success: false, offline: true };
+    }
+  },
+
+  async updatePermanentAddress(payload) {
+    try {
+      const res = await fetch(`${API_BASE}/workers/permanent-address`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    } catch {
+      return { success: false, offline: true };
+    }
+  },
+
   async getWorkerById(id) {
     try {
       const res = await fetch(`${API_BASE}/workers/${id}`, {
         headers: getHeaders(false),
+        cache: 'no-store',
       });
       if (!res.ok) throw new Error('Network error');
       return await res.json();

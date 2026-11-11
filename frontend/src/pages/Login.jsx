@@ -12,35 +12,55 @@ import {
   X,
   CheckCircle2,
   Sparkles,
-  Zap,
   Globe,
   Clock,
   Star,
   Users,
-  AlertCircle
+  AlertCircle,
+  Map as MapIcon,
+  MapPin
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { categories } from '../data/categories';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { ASSAM_DISTRICTS } from '../data/workers';
+import { CONFIGURABLE_STATES, DEFAULT_STATE, DEFAULT_COUNTRY } from '../config/states';
+import { detectNameFromEmail } from '../utils/detectName';
+import { Avatar } from '../components/Avatar';
+import { MapPickerModal } from '../components/MapPickerModal';
 
 export const Login = () => {
-  const { user, login, loginWithGoogle, registerCustomer, registerWorker, switchRole } = useAuth();
+  const { user, login, loginWithGoogle, registerCustomer, registerWorker, waitForBackendSync, switchRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const returnUrl = location.state?.from || '/home';
   const redirectNotice = location.state?.message;
+  const requiredRole = location.state?.requiredRole || searchParams.get('role');
+  const initialRole = requiredRole === 'worker' ? 'worker' : 'customer';
+
+  const getDestinationUrl = (userRole) => {
+    if (
+      location.state?.from &&
+      (!location.state?.requiredRole || userRole === location.state.requiredRole)
+    ) {
+      return location.state.from;
+    }
+    if (userRole === 'worker') return '/worker-dashboard';
+    if (userRole === 'admin') return '/admin';
+    return '/home';
+  };
 
   // Mode: 'signin' or 'register'
   const [authMode, setAuthMode] = useState(searchParams.get('mode') === 'register' ? 'register' : 'signin');
 
   // Role: 'customer' or 'worker'
-  const [role, setRole] = useState('customer');
+  const [role, setRole] = useState(initialRole);
 
-  // Sign In State
-  const [loginEmail, setLoginEmail] = useState('aarav.singhal@example.com');
-  const [loginPassword, setLoginPassword] = useState('password123');
+  // Sign In State (empty by default so only placeholder suggestions show)
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginName, setLoginName] = useState('');
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
+  const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
   // Register State
@@ -49,15 +69,21 @@ export const Login = () => {
     email: '',
     phone: '',
     password: '',
-    city: 'New Delhi',
+    state: DEFAULT_STATE,
+    city: 'Kamrup Metropolitan',
+    permanentAddress: '',
+    permanentLat: null,
+    permanentLng: null,
     profession: 'Electrician',
     hourlyRate: '300',
     agreeTerms: true,
   });
+  const [showPermanentMapPicker, setShowPermanentMapPicker] = useState(false);
 
   // Loading & Modals
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -70,15 +96,24 @@ export const Login = () => {
     } else if (mode === 'signin') {
       setAuthMode('signin');
     }
-  }, [searchParams]);
+    const urlRole = location.state?.requiredRole || searchParams.get('role');
+    if (urlRole === 'worker' || urlRole === 'customer') {
+      handleRoleToggle(urlRole);
+    }
+  }, [searchParams, location.state]);
 
   // Handle role switch in login
   const handleRoleToggle = (selectedRole) => {
     setRole(selectedRole);
-    if (selectedRole === 'customer') {
-      setLoginEmail('aarav.singhal@example.com');
-    } else {
-      setLoginEmail('rohit.kumar@example.com');
+    setAuthError('');
+  };
+
+  // Handle email change with automatic name detection
+  const handleEmailChange = (newEmail) => {
+    setLoginEmail(newEmail);
+    if (!nameManuallyEdited) {
+      const detected = detectNameFromEmail(newEmail);
+      setLoginName(detected || '');
     }
   };
 
@@ -86,31 +121,39 @@ export const Login = () => {
   const handleGoogleAuth = () => {
     setIsGoogleLoading(true);
     setTimeout(() => {
-      loginWithGoogle(role);
+      loginWithGoogle(role, loginName, loginEmail);
       setIsGoogleLoading(false);
-      navigate(returnUrl);
+      navigate(getDestinationUrl(role));
     }, 700);
   };
 
-  // Sign In Submit -> Enters the website
+  // Sign In Submit -> Enters the website with detected profile name
   const handleSignInSubmit = (e) => {
     e.preventDefault();
+    setAuthError('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      login(loginEmail, loginPassword, role);
+    setTimeout(async () => {
+      login(loginEmail, loginPassword, role, loginName);
+      const syncRes = await waitForBackendSync();
       setIsSubmitting(false);
-      navigate(returnUrl);
-    }, 600);
+      if (syncRes && syncRes.success === false && !syncRes.offline) {
+        setAuthError(syncRes.message || 'Invalid email or password. Please check your credentials or register first.');
+        return;
+      }
+      navigate(getDestinationUrl(role));
+    }, 450);
   };
 
   // Register Submit -> Enters the website
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
+    setAuthError('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (role === 'worker') {
+        const selectedState = registerData.state || DEFAULT_STATE;
         registerWorker({
           fullName: registerData.fullName,
           email: registerData.email,
@@ -118,8 +161,19 @@ export const Login = () => {
           password: registerData.password,
           profession: registerData.profession,
           hourlyRate: registerData.hourlyRate,
-          location: `${registerData.city}, India`,
+          location: `${registerData.city}, ${selectedState}, ${DEFAULT_COUNTRY}`,
           city: registerData.city,
+          locationSharingEnabled: true,
+          isOnline: true,
+          permanentAddress: {
+            address: registerData.permanentAddress,
+            state: selectedState,
+            country: DEFAULT_COUNTRY,
+            coordinates: {
+              lat: registerData.permanentLat,
+              lng: registerData.permanentLng,
+            },
+          },
           experience: '3',
         });
       } else {
@@ -131,58 +185,68 @@ export const Login = () => {
           city: registerData.city,
         });
       }
+      const syncRes = await waitForBackendSync();
       setIsSubmitting(false);
-      navigate(returnUrl);
-    }, 700);
+      if (syncRes && syncRes.success === false && !syncRes.offline) {
+        setAuthError(syncRes.message || 'Registration failed on server. Please review your details.');
+        return;
+      }
+      navigate(getDestinationUrl(role));
+    }, 500);
   };
 
   // Quick 1-click Demo Persona Logins -> Enters the website
-  const handleQuickDemoLogin = (demoRole) => {
+  const handleQuickDemoLogin = async (demoRole) => {
     if (demoRole === 'admin') {
-      login('admin@hireworker.com', 'admin123', 'admin');
+      login('admin@workoshop.com', 'password123', 'admin');
     } else if (demoRole === 'worker') {
-      login('rohit.kumar@example.com', 'worker123', 'worker');
+      login('rohit.kumar@example.com', 'password123', 'worker');
     } else {
-      login('aarav.singhal@example.com', 'cust123', 'customer');
+      login('aarav.singhal@example.com', 'password123', 'customer');
     }
-    navigate(returnUrl);
+    await waitForBackendSync();
+    navigate(getDestinationUrl(demoRole));
   };
 
   return (
-    <div className="min-h-screen bg-[#00033D] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[#0F172A] flex flex-col lg:flex-row">
       {/* ========================================================
           LEFT COLUMN: BRAND HERO BANNER (Desktop Showcase)
          ======================================================== */}
-      <div className="lg:w-1/2 bg-gradient-to-br from-[#00033D] via-[#0600AB] to-[#0033FF] p-8 sm:p-12 lg:p-16 text-white flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-[#0600AB]/40">
-        {/* Glow Effects from Palette */}
-        <div className="absolute top-0 -left-12 w-96 h-96 bg-[#977DFF]/25 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#0033FF]/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="lg:w-1/2 bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#1D4ED8] p-8 sm:p-12 lg:p-16 text-white flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800">
+        {/* Glow Effects with gentle floating ambient drift */}
+        <div className="absolute top-0 -left-12 w-96 h-96 bg-[#14B8A6]/20 rounded-full blur-3xl pointer-events-none animate-float-slow" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#2563EB]/25 rounded-full blur-3xl pointer-events-none animate-float-reverse" />
 
-        <div className="relative z-10 space-y-6">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#0600AB] via-[#0033FF] to-[#977DFF] flex items-center justify-center text-white shadow-lg shadow-[#0033FF]/35">
-              <Zap className="w-6 h-6 fill-white" />
+        <div className="relative z-10 space-y-6 animate-fade-in-up">
+          {/* Logo Brand Header */}
+          <div className="flex items-center gap-4 group cursor-pointer">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#0F172A] flex items-center justify-center text-white shadow-xl shadow-[#2563EB]/30 ring-2 ring-white/25 shrink-0 group-hover:scale-105 group-hover:rotate-1 transition-transform duration-300">
+              <img
+                src="/logo.jpg"
+                alt="WorkOshop Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
-              <span className="font-extrabold text-2xl tracking-tight text-white">
-                Hire<span className="text-[#977DFF]">Worker</span>
+              <span className="font-extrabold text-2xl sm:text-3xl tracking-tight text-white block group-hover:text-[#14B8A6] transition-colors">
+                Work<span className="text-[#14B8A6]">Oshop</span>
               </span>
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-[#FFCCF2]">
-                Gateway Portal
+              <span className="block text-[11px] font-bold uppercase tracking-widest text-teal-300 mt-0.5">
+                Official Gateway Portal
               </span>
             </div>
           </div>
 
           <div className="pt-6 space-y-4 max-w-lg">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-[#FFCCF2] text-xs font-semibold backdrop-blur-xs border border-white/15">
-              <Sparkles className="w-3.5 h-3.5 text-[#977DFF]" />
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-teal-200 text-xs font-semibold backdrop-blur-xs border border-white/15 shimmer-badge hover:scale-105 transition-transform duration-300 cursor-default">
+              <Sparkles className="w-3.5 h-3.5 text-[#14B8A6]" />
               Welcome to India's Premier Skilled Marketplace
             </span>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
               Find Skilled People. <br />
-              <span className="bg-gradient-to-r from-[#FFCCF2] via-[#977DFF] to-white bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#14B8A6] via-blue-200 to-white bg-clip-text text-transparent">
                 Get Work Done.
               </span>
             </h2>
@@ -195,7 +259,7 @@ export const Login = () => {
           {/* Value Highlights */}
           <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
             <div className="p-3.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#16A34A]/20 text-green-400 flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="text-xs">
@@ -205,7 +269,7 @@ export const Login = () => {
             </div>
 
             <div className="p-3.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#977DFF]/25 text-[#FFCCF2] flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#14B8A6]/20 text-teal-300 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
               <div className="text-xs">
@@ -222,19 +286,17 @@ export const Login = () => {
             <p className="text-xs text-slate-300">Want to explore without logging in first?</p>
             <Link
               to="/home"
-              className="inline-flex items-center gap-2 mt-1 text-sm font-bold text-[#977DFF] hover:text-[#FFCCF2] transition-colors group"
+              className="inline-flex items-center gap-2 mt-1 text-sm font-bold text-[#14B8A6] hover:text-teal-200 transition-colors group"
             >
               <span>Enter Website as Guest</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <Users className="w-4 h-4 text-[#977DFF]" />
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <Users className="w-4 h-4 text-[#14B8A6]" />
             <span>12,500+ Active Pros</span>
           </div>
-        </div>
-      </div>
         </div>
       </div>
 
@@ -242,20 +304,15 @@ export const Login = () => {
           RIGHT COLUMN: AUTHENTICATION FORM CARD
          ======================================================== */}
       <div className="lg:w-1/2 bg-surface dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex items-center justify-center p-6 sm:p-10 lg:p-12 overflow-y-auto relative transition-colors duration-200">
-        {/* Theme Toggle Button at top right */}
-        <div className="absolute top-4 right-4 z-20">
-          <ThemeToggle />
-        </div>
-
         <div className="w-full max-w-md space-y-5">
-          {/* If already logged in, show quick welcome banner */}
-          {user && (
+          {/* If already logged in, show quick welcome banner (unless switching to a different required role) */}
+          {user && (!requiredRole || user.role === requiredRole) && (
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-3 animate-fadeIn">
               <div className="flex items-center gap-3">
-                <img
-                  src={user.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-xl object-cover ring-2 ring-emerald-500"
+                <Avatar
+                  name={user.name}
+                  src={user.role === 'worker' ? user.avatar : ''}
+                  className="w-10 h-10 rounded-xl text-xs ring-2 ring-emerald-500 shrink-0"
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-900 dark:text-white">Signed in as {user.name}</p>
@@ -263,12 +320,30 @@ export const Login = () => {
                 </div>
               </div>
               <button
-                onClick={() => navigate(returnUrl)}
+                onClick={() => navigate(getDestinationUrl(user.role))}
                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+            </div>
+          )}
+
+          {user && requiredRole && user.role !== requiredRole && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 text-slate-800 animate-fadeIn">
+              <Avatar
+                name={user.name}
+                src={user.role === 'worker' ? user.avatar : ''}
+                className="w-10 h-10 rounded-xl text-xs ring-2 ring-blue-500 shrink-0"
+              />
+              <div className="text-xs">
+                <p className="font-bold text-slate-900">
+                  Signed in as {user.name} (<span className="capitalize">{user.role}</span>)
+                </p>
+                <p className="text-slate-600 text-[11px] mt-0.5">
+                  Please log in with a <strong className="capitalize">{requiredRole}</strong> account below to switch profiles.
+                </p>
+              </div>
             </div>
           )}
 
@@ -286,7 +361,21 @@ export const Login = () => {
           )}
 
           {/* Main Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-soft-lg space-y-5 transition-colors">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-soft-lg space-y-5 transition-colors animate-scale-in">
+            {/* Mobile Brand Header */}
+            <div className="flex items-center justify-center gap-2.5 pb-1 lg:hidden">
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-black flex items-center justify-center ring-1 ring-slate-200 shadow-xs">
+                <img
+                  src="/logo.jpg"
+                  alt="WorkOshop Logo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="font-extrabold text-xl text-slate-900 tracking-tight">
+                Work<span className="text-primary-600">Oshop</span>
+              </span>
+            </div>
+
             {/* Tab Switcher: Sign In vs Register */}
             <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex text-xs font-bold">
               <button
@@ -405,6 +494,13 @@ export const Login = () => {
               <div className="w-full border-t border-slate-200 dark:border-slate-700" />
             </div>
 
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{authError}</span>
+              </div>
+            )}
+
             {/* ========================================================
                 A. SIGN IN FORM
                ======================================================== */}
@@ -419,11 +515,41 @@ export const Login = () => {
                     <input
                       type="email"
                       required
+                      placeholder={role === 'customer' ? 'e.g. kuddus@example.com' : 'e.g. rohit.kumar@example.com'}
                       value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white outline-none"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Profile Name
+                    </label>
+                    <span className="text-[10px] text-primary-600 font-semibold bg-primary-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-primary-600" />
+                      Auto-detected from login
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      required
+                      value={loginName}
+                      onChange={(e) => {
+                        setLoginName(e.target.value);
+                        setNameManuallyEdited(true);
+                      }}
+                      placeholder="e.g. Kuddus Haque"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white outline-none"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    This exact name will be imported and shown on your profile, dashboard, and bookings.
+                  </p>
                 </div>
 
                 <div>
@@ -442,6 +568,7 @@ export const Login = () => {
                     <input
                       type="password"
                       required
+                      placeholder="Enter your password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white outline-none"
@@ -532,48 +659,118 @@ export const Login = () => {
                 </div>
 
                 {role === 'worker' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-primary-50/60 rounded-xl border border-primary-200">
-                    <div>
-                      <label className="block text-[11px] font-bold text-primary-800 mb-1">Trade Profession</label>
-                      <select
-                        value={registerData.profession}
-                        onChange={(e) => setRegisterData({ ...registerData, profession: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-primary-300 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.name}>{c.name}</option>
-                        ))}
-                      </select>
+                  <div className="space-y-3 p-3 bg-primary-50/60 rounded-xl border border-primary-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-primary-800 mb-1">Trade Profession</label>
+                        <select
+                          value={registerData.profession}
+                          onChange={(e) => setRegisterData({ ...registerData, profession: e.target.value })}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-primary-300 rounded-lg outline-none font-semibold text-slate-800"
+                        >
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-primary-800 mb-1">Hourly Rate (₹)</label>
+                        <input
+                          type="number"
+                          min="150"
+                          value={registerData.hourlyRate}
+                          onChange={(e) => setRegisterData({ ...registerData, hourlyRate: e.target.value })}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-primary-300 rounded-lg outline-none font-bold text-slate-800"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-primary-800 mb-1">Hourly Rate (₹)</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-primary-800">
+                          Permanent Address (Private)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowPermanentMapPicker(true)}
+                          className="text-[11px] font-bold text-primary-700 hover:underline inline-flex items-center gap-1"
+                        >
+                          <MapIcon className="w-3 h-3" />
+                          <span>Select on Map</span>
+                        </button>
+                      </div>
                       <input
-                        type="number"
-                        min="150"
-                        value={registerData.hourlyRate}
-                        onChange={(e) => setRegisterData({ ...registerData, hourlyRate: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-primary-300 rounded-lg outline-none font-bold text-slate-800"
+                        type="text"
+                        required
+                        placeholder={`House/Street, Locality, ${registerData.state}, ${DEFAULT_COUNTRY}`}
+                        value={registerData.permanentAddress}
+                        onChange={(e) => setRegisterData({ ...registerData, permanentAddress: e.target.value })}
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-primary-300 rounded-lg outline-none text-slate-800"
                       />
+                      {registerData.permanentLat !== null && registerData.permanentLng !== null && (
+                        <p className="text-[10px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>
+                            Pinned privately: {Number(registerData.permanentLat).toFixed(4)}, {Number(registerData.permanentLng).toFixed(4)}
+                          </span>
+                        </p>
+                      )}
                     </div>
+                  </div>
+                )}
+
+                {role === 'worker' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">State *</label>
+                    <select
+                      value={registerData.state}
+                      onChange={(e) => {
+                        const nextState = e.target.value;
+                        setRegisterData({
+                          ...registerData,
+                          state: nextState,
+                          city: nextState === 'Assam' ? 'Kamrup Metropolitan' : '',
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                    >
+                      {CONFIGURABLE_STATES.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">City</label>
-                    <select
-                      value={registerData.city}
-                      onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
-                      className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-                    >
-                      <option value="New Delhi">New Delhi</option>
-                      <option value="Mumbai">Mumbai</option>
-                      <option value="Bengaluru">Bengaluru</option>
-                      <option value="Hyderabad">Hyderabad</option>
-                      <option value="Pune">Pune</option>
-                      <option value="Chennai">Chennai</option>
-                    </select>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      {registerData.state === 'Assam' ? 'District (Assam)' : `City / District (${registerData.state})`}
+                    </label>
+                    {registerData.state === 'Assam' ? (
+                      <select
+                        value={registerData.city}
+                        onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
+                        className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                      >
+                        {ASSAM_DISTRICTS.map((d) => (
+                          <option key={d.district} value={d.district}>
+                            {d.town !== d.district ? `${d.town} (${d.district})` : d.district}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        required
+                        placeholder={`Enter city in ${registerData.state}`}
+                        value={registerData.city}
+                        onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
+                        className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -583,6 +780,7 @@ export const Login = () => {
                       <input
                         type="password"
                         required
+                        minLength={6}
                         placeholder="Min 6 chars"
                         value={registerData.password}
                         onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
@@ -731,6 +929,27 @@ export const Login = () => {
           </div>
         </div>
       )}
+      <MapPickerModal
+        isOpen={showPermanentMapPicker}
+        onClose={() => setShowPermanentMapPicker(false)}
+        initialValue={registerData.permanentAddress}
+        initialCoords={
+          registerData.permanentLat !== null && registerData.permanentLng !== null
+            ? { lat: registerData.permanentLat, lng: registerData.permanentLng }
+            : null
+        }
+        defaultState={registerData.state || DEFAULT_STATE}
+        defaultCountry={DEFAULT_COUNTRY}
+        title="Select Permanent Address on Map (Private)"
+        onSelectLocation={(loc, _nearest, exactCoords) =>
+          setRegisterData((prev) => ({
+            ...prev,
+            permanentAddress: loc,
+            permanentLat: exactCoords?.lat ?? prev.permanentLat,
+            permanentLng: exactCoords?.lng ?? prev.permanentLng,
+          }))
+        }
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 {
-  "name": "hireworker-backend",
+  "name": "workoshop-backend",
   "version": "1.0.0",
-  "description": "Enterprise-grade, secure, scalable REST API & Socket.io backend for HireWorker",
+  "description": "Enterprise-grade, secure, scalable REST API & Socket.io backend for WorkOshop",
   "main": "server.js",
   "type": "module",
   "scripts": {

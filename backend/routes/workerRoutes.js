@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import {
   getAllWorkers,
+  getNearbyWorkers,
   getWorkerById,
+  getMyWorkerProfile,
   updateMyProfile,
+  updateMyLocation,
+  updateMyPermanentAddress,
   uploadPortfolioImages,
   updateAvailability,
   deleteWorkerProfile,
@@ -14,9 +18,13 @@ import { upload } from '../middleware/uploadMiddleware.js';
 const router = Router();
 
 router.get('/', optionalAuth, getAllWorkers);
+router.get('/nearby', optionalAuth, getNearbyWorkers);
+router.get('/me/profile', protect, authorize('worker', 'admin'), getMyWorkerProfile);
 router.get('/:id', optionalAuth, getWorkerById);
 
 router.post('/profile', protect, authorize('worker', 'admin'), updateMyProfile);
+router.put('/location', protect, authorize('worker', 'admin'), updateMyLocation);
+router.put('/permanent-address', protect, authorize('worker', 'admin'), updateMyPermanentAddress);
 router.put('/availability', protect, authorize('worker', 'admin'), updateAvailability);
 router.post(
   '/portfolio-images',

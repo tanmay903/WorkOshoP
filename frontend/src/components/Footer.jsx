@@ -1,17 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, ShieldCheck, Headphones, Heart, Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
 
 export const Footer = () => {
   return (
-    <footer className="bg-navy-950 text-slate-400 text-sm border-t border-slate-800">
+    <footer className="bg-[#00033D] text-slate-400 text-sm border-t border-[#0600AB]/40">
       {/* Top Features Bar */}
-      <div className="border-b border-slate-800/80">
+      <div className="border-b border-[#0600AB]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center md:text-left">
             <div className="flex items-center gap-4 justify-center md:justify-start">
-              <div className="w-12 h-12 rounded-2xl bg-primary-900/60 border border-primary-500/20 text-primary-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#0600AB]/40 border border-[#977DFF]/30 text-[#977DFF] flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
@@ -21,7 +20,7 @@ export const Footer = () => {
             </div>
 
             <div className="flex items-center gap-4 justify-center md:justify-start">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-900/40 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#0033FF]/30 border border-[#977DFF]/30 text-[#FFCCF2] flex items-center justify-center shrink-0">
                 <Zap className="w-6 h-6" />
               </div>
               <div>
@@ -31,7 +30,7 @@ export const Footer = () => {
             </div>
 
             <div className="flex items-center gap-4 justify-center md:justify-start">
-              <div className="w-12 h-12 rounded-2xl bg-amber-900/40 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#977DFF]/20 border border-[#977DFF]/30 text-[#977DFF] flex items-center justify-center shrink-0">
                 <Headphones className="w-6 h-6" />
               </div>
               <div>
@@ -48,31 +47,35 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/home" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center text-white">
-                <Zap className="w-5 h-5 fill-white" />
+            <Link to="/home" className="flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden bg-black flex items-center justify-center ring-1 ring-white/20 shadow-md group-hover:scale-105 transition-transform shrink-0">
+                <img
+                  src="/logo.jpg"
+                  alt="WorkOshop Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <span className="font-extrabold text-2xl tracking-tight text-white">
-                Hire<span className="text-primary-500">Worker</span>
+              <span className="font-extrabold text-2xl tracking-tight text-white group-hover:text-primary-400 transition-colors">
+                Work<span className="text-primary-500">Oshop</span>
               </span>
             </Link>
 
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
-              HireWorker is India's premier skilled-worker marketplace connecting homeowners and businesses with verified electricians, plumbers, carpenters, mechanics, cleaners, and more.
+              WorkOshop is India's premier skilled-worker marketplace connecting homeowners and businesses with verified electricians, plumbers, carpenters, mechanics, cleaners, and more.
             </p>
 
             <div className="pt-2 text-xs text-slate-400 space-y-2">
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary-500" />
-                <span>+91 (011) 4567-8900 / 1800-HIRE-PRO</span>
+                <span>+91 (011) 4567-8900 / 1800-WORKOSHOP</span>
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary-500" />
-                <span>support@hireworker.com</span>
+                <span>support@workoshop.com</span>
               </p>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary-500" />
-                <span>Tech Park Tower B, New Delhi &bull; Mumbai &bull; Bengaluru</span>
+                <span>Guwahati &bull; Dibrugarh &bull; Jorhat &bull; Silchar, Assam</span>
               </p>
             </div>
           </div>
@@ -99,7 +102,6 @@ export const Footer = () => {
               <li><Link to="/my-jobs" className="hover:text-white transition-colors">My Posted Jobs</Link></li>
               <li><Link to="/bookings" className="hover:text-white transition-colors">Track Bookings</Link></li>
               <li><Link to="/register-worker" className="text-primary-400 font-semibold hover:text-primary-300 transition-colors">Join as a Worker</Link></li>
-              <li><Link to="/admin" className="hover:text-white transition-colors">Admin Portal</Link></li>
             </ul>
           </div>
 
@@ -109,7 +111,7 @@ export const Footer = () => {
             <p className="text-xs text-slate-400 mb-3">
               Get weekly discounts, trade tips, and service updates directly to your inbox.
             </p>
-            <form onSubmit={(e) => { e.preventDefault(); alert('Subscribed to HireWorker newsletter!'); }} className="space-y-2">
+            <form onSubmit={(e) => { e.preventDefault(); alert('Subscribed to WorkOshop newsletter!'); }} className="space-y-2">
               <input
                 type="email"
                 required
@@ -130,13 +132,12 @@ export const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <p className="text-slate-500">
-            &copy; {new Date().getFullYear()} HireWorker Technologies Inc. All rights reserved. "Find Skilled People. Get Work Done."
+            &copy; {new Date().getFullYear()} WorkOshop Technologies Inc. All rights reserved. "Find Skilled People. Get Work Done."
           </p>
           <div className="flex items-center space-x-6 text-slate-500">
             <a href="#privacy" className="hover:text-slate-300">Privacy Policy</a>
             <a href="#terms" className="hover:text-slate-300">Terms of Service</a>
             <a href="#security" className="hover:text-slate-300">Safety & Trust</a>
-            <ThemeToggle showLabel className="text-slate-400 hover:text-white" />
           </div>
         </div>
       </div>

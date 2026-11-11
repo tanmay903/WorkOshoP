@@ -10,7 +10,7 @@ import rateLimit from 'express-rate-limit';
 import { Server } from 'socket.io';
 
 // Configurations & DB
-import { connectDB } from './config/db.js';
+import { connectDB, getDBStatus } from './config/db.js';
 import { setSocketIO } from './utils/sendNotification.js';
 
 // Route handlers
@@ -27,11 +27,10 @@ import adminRoutes from './routes/adminRoutes.js';
 // Error Middleware
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
-// Load environment variables
-dotenv.config();
-
+// Load environment variables (works from both root and backend directories)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Initialize Express app
 const app = express();
@@ -190,10 +189,13 @@ app.get('/api/categories', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const db = getDBStatus();
   res.status(200).json({
     status: 'online',
-    service: 'HireWorker Enterprise Backend',
+    service: 'WorkOshop Enterprise Backend',
     version: '1.0.0',
+    database: db.state,
+    dbName: db.name,
     timestamp: new Date().toISOString(),
   });
 });
@@ -206,7 +208,7 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(` HireWorker Backend Server running on port ${PORT}`);
+  console.log(` WorkOshop Backend Server running on port ${PORT}`);
   console.log(` Mode: ${process.env.NODE_ENV || 'development'}`);
   console.log(` Health check: http://localhost:${PORT}/api/health`);
   console.log(` Socket.IO real-time engine active`);

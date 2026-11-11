@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar,
   Clock,
@@ -12,25 +12,64 @@ import {
   Star,
   MessageSquare,
   ChevronRight,
-  Filter
+  Filter,
+  RotateCcw,
+  Zap
 } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
 import { ReviewModal } from '../components/ReviewModal';
+import { Avatar } from '../components/Avatar';
+import BookingStatusTracker from '../components/BookingStatusTracker';
+import { BookingModal } from '../components/BookingModal';
 
 export const Bookings = () => {
   const { user, isWorker } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [reviewBooking, setReviewBooking] = useState(null);
+  const [repeatTarget, setRepeatTarget] = useState(null);
 
   useEffect(() => {
-    setBookings(storage.getBookings());
-  }, []);
+    setBookings(storage.getBookingsForUser(user));
+  }, [user]);
+
+  const handleRepeatBooking = (b) => {
+    const existingWorker = storage.getWorkerById(b.workerId);
+    const workerObj = existingWorker || {
+      id: b.workerId,
+      name: b.workerName,
+      profession: b.workerProfession || 'Skilled Professional',
+      avatar: b.workerAvatar,
+      hourlyRate: Number(b.estimatedAmount) || 350,
+      city: b.address || 'Assam',
+    };
+    setRepeatTarget({
+      worker: workerObj,
+      initialService: {
+        title: b.serviceTitle,
+        price: Number(b.costBreakdown?.baseUnitRate || b.estimatedAmount || workerObj.hourlyRate || 350),
+      },
+    });
+  };
 
   const handleStatusChange = (bookingId, newStatus) => {
-    const updated = storage.updateBookingStatus(bookingId, newStatus);
-    setBookings(updated);
+    storage.updateBookingStatus(bookingId, newStatus);
+    setBookings(storage.getBookingsForUser(user));
+  };
+
+  const handleMessageWorker = (b) => {
+    const conv = storage.startOrGetConversationWithWorker(
+      {
+        id: b.workerId,
+        name: b.workerName,
+        profession: b.workerProfession,
+        avatar: b.workerAvatar,
+      },
+      user
+    );
+    navigate(`/messages?conv=${conv.id}`);
   };
 
   const statuses = ['All', 'Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled', 'Rejected'];
@@ -61,11 +100,11 @@ export const Bookings = () => {
   if (!user) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5 animate-fadeIn">
-        <div className="w-16 h-16 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center">
+        <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center border border-amber-200 dark:border-amber-800">
           <Calendar className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-extrabold text-slate-900">Sign In to View Bookings</h2>
-        <p className="text-xs text-slate-600 leading-relaxed">
+        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Sign In to View Bookings</h2>
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           Please log in to access your booked services, track worker arrival, and manage appointments.
         </p>
         <Link
@@ -82,19 +121,19 @@ export const Bookings = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight">
             Service Bookings
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage your service reservations, arrival schedules, and completion sign-offs.
+            Track live milestone progress, manage arrival schedules, or re-book trusted pros.
           </p>
         </div>
 
         <Link
           to="/find-workers"
-          className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-primary-500/25 transition-all inline-flex items-center gap-1.5"
+          className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-95 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all inline-flex items-center gap-1.5"
         >
           Book Another Service
         </Link>
@@ -106,11 +145,10 @@ export const Bookings = () => {
           <button
             key={st}
             onClick={() => setFilterStatus(st)}
-            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-all ${
-              filterStatus === st
-                ? 'bg-primary-600 text-white shadow-xs'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
-            }`}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-all ${filterStatus === st
+              ? 'bg-[#2563EB] text-white shadow-xs'
+              : 'bg-white hover:bg-slate-100 text-[#1E293B] border border-slate-200'
+              }`}
           >
             {st}
           </button>
@@ -123,61 +161,71 @@ export const Bookings = () => {
           {filteredBookings.map((b) => (
             <div
               key={b.id}
-              className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-primary-300 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+              className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-soft hover:border-[#2563EB]/50 transition-all space-y-4"
             >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               {/* Left Column: Worker info & service info */}
               <div className="flex items-start gap-4">
-                <img
-                  src={b.workerAvatar || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400&auto=format&fit=crop&q=80'}
-                  alt={b.workerName}
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shrink-0 ring-1 ring-slate-200"
+                <Avatar
+                  name={b.workerName}
+                  src={b.workerAvatar}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl text-lg sm:text-xl shrink-0 ring-1 ring-slate-200"
                 />
 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                    <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                       {b.bookingNumber}
                     </span>
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getStatusBadge(b.status)}`}>
                       {b.status}
                     </span>
+                    {b.isEmergency && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        <Zap className="w-3 h-3" />
+                        Emergency Dispatch
+                      </span>
+                    )}
                   </div>
 
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                  <h3 className="text-base sm:text-lg font-bold text-[#0F172A] leading-tight">
                     {b.serviceTitle}
                   </h3>
 
                   <p className="text-xs text-slate-600">
                     Assigned Tradesperson:{' '}
-                    <Link to={`/worker/${b.workerId}`} className="font-semibold text-primary-600 hover:underline">
+                    <Link to={`/worker/${b.workerId}`} className="font-semibold text-[#2563EB] hover:underline">
                       {b.workerName} ({b.workerProfession})
                     </Link>
                   </p>
 
                   <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap pt-1">
-                    <span className="flex items-center gap-1 font-medium text-slate-700">
-                      <Calendar className="w-3.5 h-3.5 text-primary-600" />
+                    <span className="flex items-center gap-1 font-medium text-[#1E293B]">
+                      <Calendar className="w-3.5 h-3.5 text-[#2563EB]" />
                       {b.serviceDate} at {b.serviceTime}
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
                       {b.address}
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-[#0F172A]">
                       Est. ₹{b.estimatedAmount}
+                      {b.costBreakdown?.emergencyFee > 0 && (
+                        <span className="text-[10px] font-semibold text-rose-600 ml-1">(incl. urgent fee)</span>
+                      )}
                     </span>
                   </div>
 
                   {b.instructions && (
                     <p className="text-xs text-slate-500 italic mt-1">
-                      Note: "{b.instructions}"
+                      Note: &ldquo;{b.instructions}&rdquo;
                     </p>
                   )}
                 </div>
               </div>
 
               {/* Right Column: Dynamic Action Controls based on status and persona */}
-              <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap border-t lg:border-t-0 pt-3 lg:pt-0 shrink-0">
+              <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap border-t border-slate-100 lg:border-t-0 pt-3 lg:pt-0 shrink-0">
                 {/* Actions for Worker persona */}
                 {isWorker && b.status === 'Pending' && (
                   <>
@@ -189,7 +237,7 @@ export const Bookings = () => {
                     </button>
                     <button
                       onClick={() => handleStatusChange(b.id, 'Rejected')}
-                      className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs rounded-xl border border-rose-200"
+                      className="px-3 py-2 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 font-semibold text-xs rounded-xl border border-rose-200 dark:border-rose-800"
                     >
                       Decline
                     </button>
@@ -226,6 +274,18 @@ export const Bookings = () => {
                   </button>
                 )}
 
+                {/* Repeat Booking button for customers */}
+                {!isWorker && (b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Rejected') && (
+                  <button
+                    type="button"
+                    onClick={() => handleRepeatBooking(b)}
+                    className="px-3.5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Book Again</span>
+                  </button>
+                )}
+
                 {/* Cancel option for pending bookings */}
                 {b.status === 'Pending' && (
                   <button
@@ -236,29 +296,38 @@ export const Bookings = () => {
                   </button>
                 )}
 
-                <Link
-                  to={`/messages?conv=conv-1`}
-                  className="p-2 text-slate-600 hover:text-primary-600 hover:bg-slate-100 rounded-xl border border-slate-200"
+                <button
+                  type="button"
+                  onClick={() => handleMessageWorker(b)}
+                  className="p-2 text-slate-600 hover:text-[#2563EB] hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
                   title="Message worker"
                 >
                   <MessageSquare className="w-4 h-4" />
-                </Link>
+                </button>
               </div>
+              </div>
+
+              {/* Milestone Tracker */}
+              <BookingStatusTracker status={b.status} />
             </div>
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/90 shadow-xs space-y-4">
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-soft space-y-4">
           <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
             <Calendar className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800">No bookings in this category</h3>
+          <h3 className="text-lg font-bold text-[#0F172A]">
+            {bookings.length === 0 ? 'No Hires Yet' : 'No bookings in this category'}
+          </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            You don't have any bookings with status "{filterStatus}". Discover skilled workers and book a slot anytime.
+            {bookings.length === 0
+              ? 'You haven\'t hired any workers yet. When you book a tradesperson, your hire history will appear here.'
+              : `You don't have any bookings with status "${filterStatus}". Discover skilled workers and book a slot anytime.`}
           </p>
           <Link
             to="/find-workers"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs rounded-xl shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-xl shadow-sm"
           >
             Find Workers Now
           </Link>
@@ -278,7 +347,20 @@ export const Bookings = () => {
           isOpen={true}
           onClose={() => setReviewBooking(null)}
           onReviewAdded={() => {
-            setBookings(storage.getBookings());
+            setBookings(storage.getBookingsForUser(user));
+          }}
+        />
+      )}
+
+      {/* Repeat Booking Modal */}
+      {repeatTarget && (
+        <BookingModal
+          worker={repeatTarget.worker}
+          initialService={repeatTarget.initialService}
+          isOpen={true}
+          onClose={() => {
+            setRepeatTarget(null);
+            setBookings(storage.getBookingsForUser(user));
           }}
         />
       )}

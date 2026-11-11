@@ -1,8 +1,8 @@
-# HireWorker — Skilled Worker Marketplace
+# WorkOshop — Skilled Worker Marketplace
 
 **"Find Skilled People. Get Work Done."**
 
-HireWorker is a full-stack skilled-worker hiring marketplace connecting customers with verified tradespeople and service professionals (Electricians, Plumbers, Carpenters, Painters, Cleaners, Drivers, Mechanics, Construction workers, and more).
+WorkOshop is a full-stack skilled-worker hiring marketplace connecting customers with verified tradespeople and service professionals (Electricians, Plumbers, Carpenters, Painters, Cleaners, Drivers, Mechanics, Construction workers, and more).
 
 ---
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldAlert,
+  ShieldCheck,
   Users,
   Briefcase,
   Calendar,
@@ -18,6 +19,7 @@ import {
   Lock
 } from 'lucide-react';
 import { storage } from '../utils/storage';
+import { Avatar } from '../components/Avatar';
 
 export const AdminDashboard = () => {
   const [workers, setWorkers] = useState([]);
@@ -54,8 +56,8 @@ export const AdminDashboard = () => {
   const platformFeeEarned = Math.round(totalRevenue * 0.1); // 10% demo fee
 
   const filteredWorkersList = workers.filter(w =>
-    w.name.toLowerCase().includes(workerFilter.toLowerCase()) ||
-    w.profession.toLowerCase().includes(workerFilter.toLowerCase())
+    (w.name || '').toLowerCase().includes(workerFilter.toLowerCase()) ||
+    (w.profession || '').toLowerCase().includes(workerFilter.toLowerCase())
   );
 
   return (
@@ -68,17 +70,42 @@ export const AdminDashboard = () => {
             Super Administrator Console
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            HireWorker Admin Control
+            WorkOshop Admin Control
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Global governance, trade verification, marketplace integrity & transaction auditing.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-300 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-            System Status: <strong className="text-emerald-400">All Nodes Healthy</strong>
-          </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            to="/admin/verifications"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Worker Approvals</span>
+          </Link>
+          <Link
+            to="/admin/users"
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>User Directory</span>
+          </Link>
+          <Link
+            to="/admin/bookings"
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>All Bookings</span>
+          </Link>
+          <Link
+            to="/admin/analytics"
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Analytics</span>
+          </Link>
         </div>
       </div>
 
@@ -182,10 +209,10 @@ export const AdminDashboard = () => {
                   <tr key={w.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <img
+                        <Avatar
+                          name={w.name}
                           src={w.avatar}
-                          alt={w.name}
-                          className="w-10 h-10 rounded-xl object-cover shrink-0"
+                          className="w-10 h-10 rounded-xl text-xs shrink-0"
                         />
                         <div>
                           <Link to={`/worker/${w.id}`} className="font-bold text-slate-900 hover:text-primary-600 block">

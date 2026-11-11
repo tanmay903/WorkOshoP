@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
 import WorkerProfile from '../models/WorkerProfile.js';
@@ -8,12 +10,18 @@ import Review from '../models/Review.js';
 import Notification from '../models/Notification.js';
 import { connectDB } from '../config/db.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const seedAll = async () => {
   try {
-    await connectDB();
-    console.log('Seeding HireWorker MongoDB database...');
+    const connected = await connectDB();
+    if (!connected) {
+      console.error('Seeder aborted: MongoDB is not connected. Check MONGO_URI in backend/.env.');
+      process.exit(1);
+    }
+    console.log('Seeding WorkOshop MongoDB database...');
 
     // Clear existing collections
     await User.deleteMany();
@@ -26,7 +34,7 @@ const seedAll = async () => {
     // 1. Create Admin
     const admin = await User.create({
       name: 'Vikramaditya (Admin)',
-      email: 'admin@hireworker.com',
+      email: 'admin@workoshop.com',
       phone: '+91 99999 88888',
       password: 'password123',
       role: 'admin',
@@ -66,7 +74,7 @@ const seedAll = async () => {
       password: 'password123',
       role: 'worker',
       isVerified: true,
-      city: 'New Delhi',
+      city: 'Guwahati',
       profileImage: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400&auto=format&fit=crop&q=80',
     });
 
@@ -81,8 +89,13 @@ const seedAll = async () => {
       experienceYears: 5,
       hourlyRate: 300,
       dailyRate: 2200,
-      location: 'New Delhi, India',
-      city: 'New Delhi',
+      location: 'Guwahati, Assam, India',
+      city: 'Guwahati',
+      coordinates: { lat: 26.1445, lng: 91.7362 },
+      geoLocation: { type: 'Point', coordinates: [91.7362, 26.1445] },
+      isOnline: true,
+      locationSharingEnabled: true,
+      lastLocationUpdatedAt: new Date(),
       availability: 'Available Now',
       isAvailable: true,
       skills: ['Circuit Breakers', 'Home Rewiring', 'Inverter Setup', 'Smart Home Automation', 'MCB Installation', 'Short Circuit Detection'],
@@ -127,6 +140,11 @@ const seedAll = async () => {
       dailyRate: 2400,
       location: 'Mumbai, Maharashtra',
       city: 'Mumbai',
+      coordinates: { lat: 19.076, lng: 72.8777 },
+      geoLocation: { type: 'Point', coordinates: [72.8777, 19.076] },
+      isOnline: true,
+      locationSharingEnabled: true,
+      lastLocationUpdatedAt: new Date(),
       availability: 'Available Now',
       isAvailable: true,
       skills: ['Concealed Leakage Detection', 'Bathroom Fitting', 'Water Heater / Geyser', 'Drainage Unclogging'],
@@ -169,6 +187,10 @@ const seedAll = async () => {
       dailyRate: 2800,
       location: 'Bengaluru, Karnataka',
       city: 'Bengaluru',
+      coordinates: { lat: 12.9716, lng: 77.5946 },
+      geoLocation: { type: 'Point', coordinates: [77.5946, 12.9716] },
+      isOnline: false,
+      locationSharingEnabled: false,
       availability: 'Available Tomorrow',
       isAvailable: false,
       skills: ['Modular Kitchen Assembly', 'Hydraulic Bed Repair', 'Door & Window Hinges', 'Godrej Lock Fitting'],
@@ -251,7 +273,7 @@ const seedAll = async () => {
       link: '/bookings',
     });
 
-    console.log('HireWorker Database successfully seeded!');
+    console.log('WorkOshop Database successfully seeded!');
     process.exit(0);
   } catch (error) {
     console.error('Seeding error:', error);

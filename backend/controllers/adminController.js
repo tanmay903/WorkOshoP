@@ -68,7 +68,7 @@ export const toggleWorkerVerification = async (req, res, next) => {
       title: nextStatus === 'verified' ? 'Worker Profile Verified!' : 'Verification Status Updated',
       message:
         nextStatus === 'verified'
-          ? 'Congratulations! Your trade profile has been verified by HireWorker Council.'
+          ? 'Congratulations! Your trade profile has been verified by WorkOshop Council.'
           : `Your verification status has been changed to '${nextStatus}'.`,
       type: 'verification',
       link: '/worker-dashboard',

@@ -8,59 +8,63 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Color Palette from Attitude Creative Swatch:
-        // #F2E6EE (Lavender White)
-        // #FFCCF2 (Lilac Pink)
-        // #977DFF (Vibrant Violet)
-        // #0033FF (Electric Royal Blue)
-        // #0600AB (Deep Royal Indigo)
-        // #00033D (Midnight Deep Navy)
+        // Modern Service Marketplace Palette:
+        // Primary Blue: #2563EB | Dark Navy: #0F172A | Background: #F8FAFC
+        // Card: #FFFFFF | Accent Teal: #14B8A6 | Success: #16A34A | Text: #1E293B
         primary: {
-          DEFAULT: '#0033FF',
-          50: '#F2E6EE',
-          100: '#FFCCF2',
-          200: '#D6C8FF',
-          300: '#B69EFF',
-          400: '#977DFF',
-          500: '#385EFF',
-          600: '#0033FF',
-          700: '#0600AB',
-          800: '#040082',
-          900: '#00033D',
-          950: '#000224',
+          DEFAULT: '#2563EB',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#0F172A',
+          950: '#090E1A',
         },
         navy: {
-          DEFAULT: '#00033D',
-          700: '#0A00E0',
-          800: '#0600AB',
-          900: '#00033D',
-          950: '#000220',
+          DEFAULT: '#0F172A',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
+          950: '#020617',
         },
-        violet: {
-          DEFAULT: '#977DFF',
-          mist: '#F2E6EE',
-          lilac: '#FFCCF2',
-          electric: '#977DFF',
-          indigo: '#0600AB',
-          deep: '#00033D',
+        accent: {
+          DEFAULT: '#14B8A6',
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          500: '#14B8A6',
+          600: '#0D9488',
         },
         surface: '#F8FAFC',
-        success: '#10B981',
+        success: '#16A34A',
+        ink: '#1E293B',
+        violet: {
+          DEFAULT: '#2563EB',
+          mist: '#EFF6FF',
+          lilac: '#CCFBF1',
+          electric: '#14B8A6',
+          indigo: '#1D4ED8',
+          deep: '#0F172A',
+        },
       },
       backgroundImage: {
-        'swatch-gradient-1': 'linear-gradient(180deg, #F2E6EE 0%, #977DFF 100%)',
-        'swatch-gradient-2': 'linear-gradient(180deg, #FFCCF2 0%, #977DFF 50%, #0033FF 100%)',
-        'swatch-gradient-3': 'linear-gradient(180deg, #977DFF 0%, #0033FF 50%, #0600AB 100%)',
-        'swatch-gradient-4': 'linear-gradient(180deg, #0033FF 0%, #0600AB 50%, #00033D 100%)',
+        'swatch-gradient-1': 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+        'swatch-gradient-2': 'linear-gradient(135deg, #2563EB 0%, #14B8A6 100%)',
+        'swatch-gradient-3': 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 55%, #0F172A 100%)',
+        'swatch-gradient-4': 'linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1D4ED8 100%)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 51, 255, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05)',
-        'soft-lg': '0 10px 25px -3px rgba(0, 51, 255, 0.12), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
-        'electric': '0 8px 30px rgba(0, 51, 255, 0.35)',
-        'violet': '0 8px 30px rgba(151, 125, 255, 0.35)',
+        'soft': '0 2px 14px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.04)',
+        'soft-lg': '0 12px 28px -4px rgba(15, 23, 42, 0.09), 0 4px 10px -4px rgba(37, 99, 235, 0.08)',
+        'electric': '0 8px 26px rgba(37, 99, 235, 0.25)',
+        'violet': '0 8px 26px rgba(20, 184, 166, 0.25)',
       }
     },
   },
