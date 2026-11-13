@@ -14,7 +14,23 @@ export const getDBStatus = () => {
   };
 };
 
-export const connectDB = async () => {
+let retryTimer = null;
+
+const scheduleReconnect = () => {
+  if (retryTimer) return;
+  retryTimer = setInterval(async () => {
+    if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+      return;
+    }
+    const ok = await attemptConnect(true);
+    if (ok && retryTimer) {
+      clearInterval(retryTimer);
+      retryTimer = null;
+    }
+  }, 15000);
+};
+
+const attemptConnect = async (quiet = false) => {
   const rawUri =
     process.env.MONGO_URI ||
     process.env.MONGODB_URI ||
@@ -24,8 +40,10 @@ export const connectDB = async () => {
   const uri = rawUri.trim();
 
   if (uri.includes('<db_password>') || uri.includes('<password>')) {
-    console.warn('MongoDB Connection Warning: MONGO_URI in backend/.env still contains the <db_password> placeholder.');
-    console.warn('Replace <db_password> with your actual MongoDB Atlas password (or set MONGO_URI to your new cluster URI).');
+    if (!quiet) {
+      console.warn('MongoDB Connection Warning: MONGO_URI in backend/.env still contains the <db_password> placeholder.');
+      console.warn('Replace <db_password> with your actual MongoDB Atlas password (or set MONGO_URI to your new cluster URI).');
+    }
     return false;
   }
 
@@ -36,8 +54,18 @@ export const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host} (db: ${conn.connection.name})`);
     return true;
   } catch (error) {
-    console.warn(`MongoDB Connection Warning: ${error.message}`);
-    console.warn('Note: Check MONGO_URI in backend/.env and ensure IP whitelist / network access is allowed.');
+    if (!quiet) {
+      console.warn(`MongoDB Connection Warning: ${error.message}`);
+      console.warn('Note: Check MONGO_URI in backend/.env and ensure IP whitelist / network access is allowed.');
+    }
     return false;
   }
+};
+
+export const connectDB = async () => {
+  const connected = await attemptConnect(false);
+  if (!connected) {
+    scheduleReconnect();
+  }
+  return connected;
 };

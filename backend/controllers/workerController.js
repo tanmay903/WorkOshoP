@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import WorkerProfile from '../models/WorkerProfile.js';
 import User from '../models/User.js';
 import { broadcastEvent } from '../utils/sendNotification.js';
@@ -75,6 +76,12 @@ const formatApproximateArea = (workerDoc) => {
 // @access  Public
 export const getNearbyWorkers = async (req, res, next) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently disconnected. Check MongoDB Atlas IP whitelist and retry.',
+      });
+    }
     const customerLat = Number(req.query.lat);
     const customerLng = Number(req.query.lng);
     const radiusParam = Number(req.query.radius);
@@ -174,6 +181,12 @@ export const getNearbyWorkers = async (req, res, next) => {
 // @access  Public
 export const getAllWorkers = async (req, res, next) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently disconnected. Check MongoDB Atlas IP whitelist and retry.',
+      });
+    }
     const {
       q,
       loc,

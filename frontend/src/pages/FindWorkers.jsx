@@ -43,7 +43,7 @@ export const FindWorkers = () => {
   const { user } = useAuth();
   const [minRating, setMinRating] = useState(0);
   const [minExperience, setMinExperience] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(500);
+  const [maxPrice, setMaxPrice] = useState(1500);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(false);
   const [savedOnly, setSavedOnly] = useState(false);
@@ -59,16 +59,19 @@ export const FindWorkers = () => {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
 
-  // Raw workers from storage
+  // Raw workers from storage & backend API
   const [allWorkers, setAllWorkers] = useState([]);
+  const [apiError, setApiError] = useState('');
+  const [isLoadingWorkers, setIsLoadingWorkers] = useState(true);
 
-  useEffect(() => {
-    let active = true;
+  const loadWorkers = async () => {
+    setIsLoadingWorkers(true);
+    setApiError('');
     const localWorkers = storage.getWorkers();
     setAllWorkers(localWorkers);
 
-    api.getWorkers({ limit: 100 }).then((res) => {
-      if (!active || !res?.success || !Array.isArray(res.data)) return;
+    const res = await api.getWorkers({ limit: 100 });
+    if (res?.success && Array.isArray(res.data)) {
       const merged = [...res.data];
       const seen = new Set(merged.map((w) => String(w.email || w.id).toLowerCase()));
       for (const lw of localWorkers) {
@@ -79,7 +82,17 @@ export const FindWorkers = () => {
         }
       }
       setAllWorkers(merged);
-    });
+    } else {
+      setApiError(
+        res?.message ||
+          'Unable to fetch all workers from the backend database. Showing locally cached workers only.'
+      );
+    }
+    setIsLoadingWorkers(false);
+  };
+
+  useEffect(() => {
+    loadWorkers();
 
     setSavedIds(storage.getSavedWorkerIds(user?.id));
     const onSavedChanged = (e) => {
@@ -87,7 +100,6 @@ export const FindWorkers = () => {
     };
     window.addEventListener('hw-saved-workers-changed', onSavedChanged);
     return () => {
-      active = false;
       window.removeEventListener('hw-saved-workers-changed', onSavedChanged);
     };
   }, [user?.id]);
@@ -196,7 +208,7 @@ export const FindWorkers = () => {
     clearSiteLocation();
     setMinRating(0);
     setMinExperience(0);
-    setMaxPrice(500);
+    setMaxPrice(1500);
     setVerifiedOnly(false);
     setAvailableOnly(false);
     setSavedOnly(false);
@@ -208,7 +220,7 @@ export const FindWorkers = () => {
     selectedCategory !== 'all',
     minRating > 0,
     minExperience > 0,
-    maxPrice < 500,
+    maxPrice < 1500,
     verifiedOnly,
     availableOnly,
     savedOnly,
@@ -399,15 +411,15 @@ export const FindWorkers = () => {
             <input
               type="range"
               min="150"
-              max="500"
-              step="20"
+              max="1500"
+              step="50"
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
               className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
             />
             <div className="flex justify-between text-[10px] text-slate-400">
               <span>₹150/hr</span>
-              <span>₹500/hr</span>
+              <span>₹1500/hr</span>
             </div>
           </div>
 
@@ -477,6 +489,7 @@ export const FindWorkers = () => {
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>
               Showing <strong className="text-slate-900">{filteredWorkers.length}</strong> skilled professionals
+              {isLoadingWorkers ? ' (loading...)' : ''}
             </span>
             {activeFiltersCount > 0 && (
               <span className="text-primary-600 font-medium">
@@ -484,6 +497,19 @@ export const FindWorkers = () => {
               </span>
             )}
           </div>
+
+          {apiError && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 flex items-center justify-between gap-3">
+              <span>{apiError}</span>
+              <button
+                type="button"
+                onClick={loadWorkers}
+                className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold shrink-0 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
           {filteredWorkers.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
